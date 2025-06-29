@@ -1,4 +1,4 @@
-{
+{ //user setting.json 
     "redhat.telemetry.enabled": true,
     //"java.jdt.ls.java.home": "E:/java/jdk/adoptium/jdk-17.0.6+10",
     "java.jdt.ls.java.home": "E:/java/jdk/adoptium/jdk-21.0.4+7",
