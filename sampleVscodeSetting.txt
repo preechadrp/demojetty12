@@ -1,3 +1,4 @@
+// file : /.vscode/settings.json
 /*
 -java.jdt.ls.java.home คือตัวที่ใช้รันเครื่องมือ java language server ต้องเอาไปใส่ใน user settings
  เช่น "java.jdt.ls.java.home": "E:/java/jdk/adoptium/jdk-21.0.4+7",
