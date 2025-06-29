@@ -55,8 +55,6 @@ public class Main {
 
 		server.setHandler(context);
 
-		setHttsServer();
-
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			try {
 				// ใช้เวลาหยุดเซิร์ฟเวอร์
@@ -71,7 +69,7 @@ public class Main {
 		server.join();
 	}
 
-	private static void setHttsServer() throws Exception {
+	public static void setHttsServer() throws Exception {
 		
 		// ตัวอย่างทำ https 
 		//จาก https://github.com/jetty/jetty-examples/blob/12.0.x/embedded/ee10-servlet-security/src/main/java/examples/ServletTransportGuaranteeExample.java
@@ -137,6 +135,16 @@ public class Main {
 		helloHolder.setInitParameter("message", "Hello Secure Servlet World");
 
 		server.setHandler(context);
+
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			try {
+				// ใช้เวลาหยุดเซิร์ฟเวอร์
+				server.stop();
+				System.out.println("Jetty server stopped gracefully");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}));
 
 		server.start();
 		server.join();
