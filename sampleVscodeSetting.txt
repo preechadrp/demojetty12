@@ -1,0 +1,47 @@
+/*
+-java.jdt.ls.java.home คือตัวที่ใช้รันเครื่องมือ java language server ต้องเอาไปใส่ใน user settings
+ เช่น "java.jdt.ls.java.home": "E:/java/jdk/adoptium/jdk-21.0.4+7",
+-java ที่ใช้ compile/run โปรเจคจะอยู่ใน java.configuration.runtimes ที่กำหนด default = true
+-คู่มือ set maven กับ vscode https://github.com/Microsoft/vscode-maven
+ ถ้าสร้าง maven project ก็ยังมองไม่เห็น java_home ใน config นี้ แก้ไขด้วยการ
+ 1.เพิ่มตัวแปรระบบ JAVA_HOME และชี้ PATH ไปยังโฟลด์เดอร์ของ jdk เช่น E:\java\jdk\adoptium\jdk-21.0.4+7 เป็นต้น  
+ 2.เพิ่ม "maven.executable.path": "E:\\devTools\\maven_tool\\apache-maven-3.9.0\\bin\\mvn.cmd", ระดับ user
+   เพราะจะทำให้ vscode ดู Dependencies ได้ (ใช้ตัว maven built-in มากับ vscode ไม่ได้)
+*/
+{
+    "java.configuration.runtimes":[
+        {
+            "name": "JavaSE-21",
+            "path": "E:/java/jdk/adoptium/jdk-21.0.4+7",
+            "default": true
+        },
+    ],
+    //"java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "automatic",
+    //"java.dependency.packagePresentation": "hierarchical",
+    //"java.dependency.syncWithFolderExplorer": false,
+    //"java.project.explorer.showNonJavaResources": false,
+    //==maven config ===
+    // "maven.executable.options": "-o -s E:/devTools/maven_tool/apache-maven-3.9.0/conf/settings.xml",
+    //== maven.executable.path ต้อง setting ระดับ user เท่านั้น ถ้าไม่ระบุ vscode จะเอาตัวที่ auto ติดตั้งจาก vscode โดยตรง
+    // "maven.executable.path": "E:\\devTools\\maven_tool\\apache-maven-3.9.0\\bin\\mvn.cmd",
+    "maven.terminal.customEnv": [
+        {
+            "environmentVariable": "MAVEN_OPTS",
+            "value": "-Xms1024m -Xmx2g"
+        },
+        //{
+        //    "environmentVariable": "M2_HOME",
+        //    "value": "E:\\devTools\\maven_tool\\apache-maven-3.9.0"
+        //},
+        // เมื่อกด maven -> compile  จะเห็นตาม environmentVariable JAVA_HOME นี้  และใช้ java นี้ในการ compile project
+        {
+            "environmentVariable": "JAVA_HOME",
+            "value": "E:/java/jdk/adoptium/jdk-21.0.4+7"
+        },
+    ],
+    "maven.terminal.useJavaHome": true,
+    "maven.view": "hierarchical",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.debug.settings.onBuildFailureProceed": true,
+}
