@@ -1,0 +1,25 @@
+{
+    "redhat.telemetry.enabled": true,
+    //"java.jdt.ls.java.home": "E:/java/jdk/adoptium/jdk-17.0.6+10",
+    "java.jdt.ls.java.home": "E:/java/jdk/adoptium/jdk-21.0.4+7",
+    "maven.executable.path": "E:\\devTools\\maven_tool\\apache-maven-3.9.9\\bin\\mvn.cmd",
+    "git.autofetch": true,
+    "workbench.startupEditor": "none",
+    "git.enableSmartCommit": true,
+    "go.toolsManagement.autoUpdate": true,
+    "workbench.colorTheme": "Default Light+",
+    "containers.containerClient": "com.microsoft.visualstudio.containers.podman",
+    "rsp-ui.enableStartServerOnActivation": [
+        {
+            "id": "redhat.vscode-community-server-connector",
+            "name": "Community Server Connector",
+            "startOnActivation": true
+        }
+    ],
+    "[html]": {
+
+        "editor.suggest.insertMode": "replace"
+    },
+    "workbench.editor.empty.hint": "hidden",
+    "workbench.editor.splitInGroupLayout": "vertical",
+}
