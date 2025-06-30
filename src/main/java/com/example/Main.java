@@ -9,6 +9,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceFactory;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
@@ -21,6 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class Main {
 
+	static int httpPort = 8080;
 	public static void main(String[] args) throws Exception {
 
 		//== ตัวอย่าง
@@ -28,7 +30,13 @@ public class Main {
 		//การหา resource แบบปลอดภัย
 		//ทำ stop gracefull
 
-		Server server = new Server();
+		//set thread pool
+		int maxThreads = 100;
+		int minThreads = 10;
+		int idleTimeout = 120;
+
+		var threadPool = new QueuedThreadPool(maxThreads, minThreads, idleTimeout);
+		Server server = new Server(threadPool);
 
 		//add Connector
 		addConnector(server);
@@ -70,8 +78,6 @@ public class Main {
 	}
 
 	private static void addConnector(Server server) {
-
-		int httpPort = 8080;
 
 		ServerConnector httpConnector = new ServerConnector(server);
 		httpConnector.setPort(httpPort);

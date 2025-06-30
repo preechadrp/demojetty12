@@ -2,6 +2,8 @@
 /*
 -java.jdt.ls.java.home คือตัวที่ใช้รันเครื่องมือ java language server ต้องเอาไปใส่ใน user settings
  เช่น "java.jdt.ls.java.home": "E:/java/jdk/adoptium/jdk-21.0.4+7",
+ หรือ set ตัวแปรระบบ JAVA_HOME ให้ชี้ไปยัง jdk ที่ version สูงที่สุดที่เรามีก็ไม่ต้อง set ตัวนี้ (แนะนำเป็น version LTS)
+ และ set ตัวแปร PATH ของระบบให้ชี้ไปที่ JAVA_HOME/bin เพื่อให้มองเห็น java.exe 
 -java ที่ใช้ compile/run โปรเจคจะอยู่ใน java.configuration.runtimes ที่กำหนด default = true
 -คู่มือ set maven กับ vscode https://github.com/Microsoft/vscode-maven
  ถ้าสร้าง maven project ก็ยังมองไม่เห็น java_home ใน config นี้ แก้ไขด้วยการ
