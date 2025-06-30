@@ -6,6 +6,7 @@ import java.util.EnumSet;
 
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceFactory;
 
@@ -27,10 +28,18 @@ public class Main {
 		//การหา resource แบบปลอดภัย
 		//ทำ stop gracefull
 
-		int port = 8080;
+		int httpPort = 8080;
 
-		Server server = new Server(port);
+		Server server = new Server();
+		
+		//add Connector
+		ServerConnector httpConnector = new ServerConnector(server);
+		httpConnector.setPort(httpPort);
+		server.addConnector(httpConnector);
+		
+		//add context
 		WebAppContext context = new WebAppContext();
+		server.setHandler(context);
 
 		//set web resource
 		URL rscURL = Main.class.getResource("/webapp/");
@@ -51,7 +60,7 @@ public class Main {
 			protected void doGet(HttpServletRequest request, HttpServletResponse response)
 					throws ServletException, IOException {
 
-				System.out.println("call /api/status");
+				System.out.println("call /api/blocking");
 
 				response.setContentType("application/json");
 				response.setStatus(HttpServletResponse.SC_OK);
@@ -59,9 +68,9 @@ public class Main {
 
 			}
 
-		}, "/blocking");//test link = http://localhost:8080/blocking
+		}, "/api/blocking");//test link = http://localhost:8080/api/blocking
 
-		// เพิ่ม filter
+		// add filter
 		context.addFilter(new Filter() {
 
 			@Override
@@ -75,8 +84,6 @@ public class Main {
 			}
 
 		}, "/api/*", EnumSet.of(DispatcherType.REQUEST));
-
-		server.setHandler(context);
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			try {
