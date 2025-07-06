@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.EnumSet;
-import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jetty.ee10.servlet.SessionHandler;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
@@ -32,6 +31,7 @@ import jakarta.servlet.http.HttpServletResponse;
 public class Main {
 
 	static int server_port = 8080;
+	static Server server = null;
 
 	public static void main(String[] args) throws Exception {
 
@@ -48,11 +48,11 @@ public class Main {
 			int idleTimeout = 120;
 
 			var threadPool = new QueuedThreadPool(maxThreads, minThreads, idleTimeout);
-			Server server = new Server(threadPool);
+			server = new Server(threadPool);
 
-			addConnectorHttp(server);
-			// addConnectorHttps(server);
-			addContext(server);
+			addConnectorHttp();
+			// addConnectorHttps();//เมื่อต้องการทำ https
+			addContext();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 				try {
@@ -74,7 +74,7 @@ public class Main {
 
 	}
 
-	public static void addConnectorHttp(Server server) {
+	public static void addConnectorHttp() {
 
 		ServerConnector httpConnector = new ServerConnector(server);
 		httpConnector.setPort(server_port);
@@ -82,15 +82,37 @@ public class Main {
 
 	}
 
-	public static void addConnectorHttps(Server server) {
+	public static void addConnectorHttps() {
 
 		// ======== https =======
 		// Setup SSL
 		ResourceFactory resourceFactory = ResourceFactory.of(server);
 		SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
+
+		// String keystorePath =
+		// Main.class.getResource("/keystore.jks").toExternalForm();
+		// sslContextFactory.setKeyStorePath(keystorePath);
 		sslContextFactory.setKeyStoreResource(findKeyStore(resourceFactory));
-		sslContextFactory.setKeyStorePassword("OBF:1vny1zlo1x8e1vnw1vn61x8g1zlu1vn4");
-		sslContextFactory.setKeyManagerPassword("OBF:1u2u1wml1z7s1z7a1wnl1u2g");
+		sslContextFactory.setKeyStorePassword("myPassword");
+		sslContextFactory.setKeyManagerPassword("myPassword");
+
+		String[] allowedCiphers = {
+				"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+				"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+				"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+				"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"
+				// เพิ่ม Cipher Suites อื่นๆ ที่คุณต้องการ (และรองรับใน JVM ของคุณ)
+				// หลีกเลี่ยง Cipher Suites ที่มี SHA1, RC4, 3DES, หรือไม่มี Forward Secrecy
+		};
+		sslContextFactory.setIncludeCipherSuites(allowedCiphers);
+
+		// กำหนด Protocol ที่อนุญาต (Allowed Protocols) ***
+		// ควรใช้ TLSv1.2 และ TLSv1.3 เท่านั้น หลีกเลี่ยง SSLv3, TLSv1, TLSv1.1
+		sslContextFactory.setIncludeProtocols("TLSv1.2", "TLSv1.3");
+
+		// สร้าง SslConnectionFactory ---
+		// SslConnectionFactory ทำหน้าที่จัดการการเชื่อมต่อ SSL/TLS
+		SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, "http/1.1");
 
 		// Setup HTTPS Configuration
 		HttpConfiguration httpsConf = new HttpConfiguration();
@@ -99,8 +121,10 @@ public class Main {
 		httpsConf.addCustomizer(new SecureRequestCustomizer()); // adds ssl info to request object
 
 		// Establish the HTTPS ServerConnector
-		ServerConnector httpsConnector = new ServerConnector(server,
-				new SslConnectionFactory(sslContextFactory, "http/1.1"), new HttpConnectionFactory(httpsConf));
+		ServerConnector httpsConnector = new ServerConnector(
+				server,
+				sslConnectionFactory,
+				new HttpConnectionFactory(httpsConf));
 		httpsConnector.setPort(server_port);
 
 		server.addConnector(httpsConnector);
@@ -116,16 +140,14 @@ public class Main {
 		return resource;
 	}
 
-	private static void addContext(Server server) throws URISyntaxException {
+	private static void addContext() throws URISyntaxException {
 
 		WebAppContext context = new WebAppContext();
-		server.setHandler(context);
 
-		// set session handler
-		SessionHandler sessionHld = new SessionHandler();
-		sessionHld.setMaxInactiveInterval((int) TimeUnit.MINUTES.toSeconds(10));// in seconds default : 1800
-		sessionHld.setServer(server);
-		context.setSessionHandler(sessionHld);
+		// *** ย้ายการตั้งค่า SessionHandler มาไว้ด้านบนสุด ***
+		SessionHandler sessionHandler = new SessionHandler();
+		sessionHandler.setMaxInactiveInterval(10 * 60); // 10 นาที (600 วินาที)
+		context.setSessionHandler(sessionHandler);
 
 		// add servlet
 		addServlet(context);
@@ -137,11 +159,12 @@ public class Main {
 		URL rscURL = Main.class.getResource("/webapp/");
 		Resource baseResource = ResourceFactory.of(context).newResource(rscURL.toURI());
 		System.out.println("Using BaseResource: " + baseResource);
-
 		context.setBaseResource(baseResource);
 		context.setContextPath("/");
 		context.setWelcomeFiles(new String[] { "welcome.html" });
 		context.setParentLoaderPriority(true);
+
+		server.setHandler(context);
 
 	}
 
