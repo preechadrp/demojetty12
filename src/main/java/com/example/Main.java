@@ -132,7 +132,7 @@ public class Main {
 	}
 
 	private static Resource findKeyStore(ResourceFactory resourceFactory) {
-		String resourceName = "ssl/keystore";
+		String resourceName = "ssl/keystore.jks";
 		Resource resource = resourceFactory.newClassLoaderResource(resourceName);
 		if (!Resources.isReadableFile(resource)) {
 			throw new RuntimeException("Unable to read " + resourceName);
