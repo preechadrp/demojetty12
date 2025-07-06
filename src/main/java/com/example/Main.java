@@ -38,7 +38,7 @@ public class Main {
 		try {
 
 			// == ตัวอย่าง
-			// ใช้ jetty-ee10-webapp 12.0.22
+			// ใช้ jetty-ee10-webapp 12.0.23
 			// การหา resource แบบปลอดภัย
 			// ทำ stop gracefull
 
