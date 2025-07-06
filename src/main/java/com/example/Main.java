@@ -123,7 +123,7 @@ public class Main {
 
 		// set session handler
 		SessionHandler sessionHld = new SessionHandler();
-		sessionHld.setMaxInactiveInterval((int) TimeUnit.MINUTES.toSeconds(30));// in seconds default : 1800
+		sessionHld.setMaxInactiveInterval((int) TimeUnit.MINUTES.toSeconds(10));// in seconds default : 1800
 		sessionHld.setServer(server);
 		context.setSessionHandler(sessionHld);
 
