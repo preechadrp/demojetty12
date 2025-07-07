@@ -50,7 +50,7 @@ public class Main {
 			server = new Server(threadPool);
 
 			addConnectorHttp();
-			//addConnectorHttps();// เมื่อต้องการทำ https
+			//addConnectorHttps();// เมื่อต้องการทำ https  หมายเหตุยังไม่ทดสอบ
 			addContext();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
