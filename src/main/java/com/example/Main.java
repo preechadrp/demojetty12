@@ -5,7 +5,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.EnumSet;
 
-import org.eclipse.jetty.ee10.servlet.SessionHandler;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -50,8 +49,8 @@ public class Main {
 			var threadPool = new QueuedThreadPool(maxThreads, minThreads, idleTimeout);
 			server = new Server(threadPool);
 
-			addConnectorHttp();
-			// addConnectorHttps();//เมื่อต้องการทำ https
+			// addConnectorHttp();
+			addConnectorHttps();// เมื่อต้องการทำ https
 			addContext();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -89,12 +88,9 @@ public class Main {
 		ResourceFactory resourceFactory = ResourceFactory.of(server);
 		SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 
-		// String keystorePath =
-		// Main.class.getResource("/keystore.jks").toExternalForm();
-		// sslContextFactory.setKeyStorePath(keystorePath);
 		sslContextFactory.setKeyStoreResource(findKeyStore(resourceFactory));
-		sslContextFactory.setKeyStorePassword("myPassword");
-		sslContextFactory.setKeyManagerPassword("myPassword");
+		sslContextFactory.setKeyStorePassword("mykeystore");
+		sslContextFactory.setKeyManagerPassword("mykeystore");
 
 		String[] allowedCiphers = {
 				"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
@@ -132,7 +128,7 @@ public class Main {
 	}
 
 	private static Resource findKeyStore(ResourceFactory resourceFactory) {
-		String resourceName = "ssl/keystore.jks";
+		String resourceName = "/keystore.jks";
 		Resource resource = resourceFactory.newClassLoaderResource(resourceName);
 		if (!Resources.isReadableFile(resource)) {
 			throw new RuntimeException("Unable to read " + resourceName);
@@ -143,11 +139,6 @@ public class Main {
 	private static void addContext() throws URISyntaxException {
 
 		WebAppContext context = new WebAppContext();
-
-		// *** ย้ายการตั้งค่า SessionHandler มาไว้ด้านบนสุด ***
-		SessionHandler sessionHandler = new SessionHandler();
-		sessionHandler.setMaxInactiveInterval(10 * 60); // 10 นาที (600 วินาที)
-		context.setSessionHandler(sessionHandler);
 
 		// add servlet
 		addServlet(context);
@@ -163,6 +154,7 @@ public class Main {
 		context.setContextPath("/");
 		context.setWelcomeFiles(new String[] { "welcome.html" });
 		context.setParentLoaderPriority(true);
+		// context.getSessionHandler().setMaxInactiveInterval(900);//ไม่ผ่านต้องใช้ไฟล์ /WEB-INF/web.xml ถึงจะผ่าน ,test 7/7/68
 
 		server.setHandler(context);
 
