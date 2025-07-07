@@ -49,8 +49,8 @@ public class Main {
 			var threadPool = new QueuedThreadPool(maxThreads, minThreads, idleTimeout);
 			server = new Server(threadPool);
 
-			// addConnectorHttp();
-			addConnectorHttps();// เมื่อต้องการทำ https
+			addConnectorHttp();
+			//addConnectorHttps();// เมื่อต้องการทำ https
 			addContext();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
