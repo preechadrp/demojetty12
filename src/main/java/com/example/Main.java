@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.EnumSet;
+import java.util.concurrent.Executors;
 
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -47,6 +48,11 @@ public class Main {
 			int idleTimeout = 120;
 
 			var threadPool = new QueuedThreadPool(maxThreads, minThreads, idleTimeout);
+			//กำหนดให้ทำงานแบบ Virtual Threads
+			threadPool.setVirtualThreadsExecutor(Executors.newVirtualThreadPerTaskExecutor());
+			// สามารถกำหนดชื่อ prefix ของ Virtual Threads ได้เพื่อการ Debug
+	        // threadPool.setVirtualThreadsExecutor(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("jetty-vt-", 0).factory()));
+
 			server = new Server(threadPool);
 
 			addConnectorHttp();
@@ -170,6 +176,7 @@ public class Main {
 			protected void doGet(HttpServletRequest request, HttpServletResponse response)
 					throws ServletException, IOException {
 
+			    System.out.println("Request handled by thread: " + Thread.currentThread().getName());
 				System.out.println("call /api/blocking");
 				System.out.println("request.getSession().getId() : " + request.getSession(true).getId());
 				System.out.println("session timeout : " + request.getSession().getMaxInactiveInterval());// seconds unit
