@@ -42,12 +42,7 @@ public class Main {
 			// การหา resource แบบปลอดภัย
 			// ทำ stop gracefull
 
-			// set thread pool
-			int maxThreads = 100;
-			int minThreads = 10;
-			int idleTimeout = 120;
-
-			var threadPool = new QueuedThreadPool(maxThreads, minThreads, idleTimeout);
+			var threadPool = new QueuedThreadPool();
 			//กำหนดให้ทำงานแบบ Virtual Threads
 			threadPool.setVirtualThreadsExecutor(Executors.newVirtualThreadPerTaskExecutor());
 			// สามารถกำหนดชื่อ prefix ของ Virtual Threads ได้เพื่อการ Debug
