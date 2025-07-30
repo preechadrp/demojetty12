@@ -15,7 +15,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceFactory;
-import org.eclipse.jetty.util.resource.Resources;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
@@ -44,14 +43,13 @@ public class Main {
 
 			var threadPool = new QueuedThreadPool();
 			//กำหนดให้ทำงานแบบ Virtual Threads
-			threadPool.setVirtualThreadsExecutor(Executors.newVirtualThreadPerTaskExecutor());
+			// threadPool.setVirtualThreadsExecutor(Executors.newVirtualThreadPerTaskExecutor());
 			// สามารถกำหนดชื่อ prefix ของ Virtual Threads ได้เพื่อการ Debug
-	        // threadPool.setVirtualThreadsExecutor(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("jetty-vt-", 0).factory()));
+			threadPool.setVirtualThreadsExecutor(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("jetty-vt-", 0).factory()));
 
 			server = new Server(threadPool);
 
-			addConnectorHttp();
-			//addConnectorHttps();// เมื่อต้องการทำ https  หมายเหตุยังไม่ทดสอบ
+			addConnector(false, false);
 			addContext();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -74,67 +72,83 @@ public class Main {
 
 	}
 
-	public static void addConnectorHttp() {
+	public static void addConnector(boolean useHttps, boolean useTrustStore) throws Exception {
 
-		ServerConnector httpConnector = new ServerConnector(server);
-		httpConnector.setPort(server_port);
-		server.addConnector(httpConnector);
+		if (!useHttps) {
 
-	}
+			ServerConnector httpConnector = new ServerConnector(server);
+			httpConnector.setPort(server_port);
+			server.addConnector(httpConnector);
 
-	public static void addConnectorHttps() {
+		} else { // เมื่อต้องการทำ https  หมายเหตุยังไม่ทดสอบ
 
-		// ======== https =======
-		// Setup SSL
-		ResourceFactory resourceFactory = ResourceFactory.of(server);
-		SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
+			// ======== https =======
+			// Setup SSL
+			SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 
-		sslContextFactory.setKeyStoreResource(findKeyStore(resourceFactory));
-		sslContextFactory.setKeyStorePassword("mykeystore");
-		sslContextFactory.setKeyManagerPassword("mykeystore");
+			// กำหนด KeyStore (สำหรับ Server Certificate)
+			// ตรวจสอบให้แน่ใจว่าไฟล์ keystore.jks อยู่ใน classpath หรือระบุพาธที่ถูกต้อง
+			URL keystoreUrl = Main.class.getClassLoader().getResource("/keystore.jks");
+			if (keystoreUrl == null) {
+				throw new IllegalStateException("keystore.jks not found in classpath. Please ensure it's in src/main/resources or similar.");
+			}
+			sslContextFactory.setKeyStorePath(keystoreUrl.toExternalForm());
+			sslContextFactory.setKeyStorePassword("mykeystore");
+			sslContextFactory.setKeyManagerPassword("mykeystore");
 
-		String[] allowedCiphers = {
-				"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-				"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-				"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-				"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"
-				// เพิ่ม Cipher Suites อื่นๆ ที่คุณต้องการ (และรองรับใน JVM ของคุณ)
-				// หลีกเลี่ยง Cipher Suites ที่มี SHA1, RC4, 3DES, หรือไม่มี Forward Secrecy
-		};
-		sslContextFactory.setIncludeCipherSuites(allowedCiphers);
+			String[] allowedCiphers = {
+					"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+					"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+					"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+					"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"
+					// เพิ่ม Cipher Suites อื่นๆ ที่คุณต้องการ (และรองรับใน JVM ของคุณ)
+					// หลีกเลี่ยง Cipher Suites ที่มี SHA1, RC4, 3DES, หรือไม่มี Forward Secrecy
+			};
+			if (allowedCiphers.length > 0) {
+				sslContextFactory.setIncludeCipherSuites(allowedCiphers);
+			}
 
-		// กำหนด Protocol ที่อนุญาต (Allowed Protocols) ***
-		// ควรใช้ TLSv1.2 และ TLSv1.3 เท่านั้น หลีกเลี่ยง SSLv3, TLSv1, TLSv1.1
-		sslContextFactory.setIncludeProtocols("TLSv1.2", "TLSv1.3");
+			// กำหนด Protocol ที่อนุญาต (Allowed Protocols) ***
+			// ควรใช้ TLSv1.2 และ TLSv1.3 เท่านั้น หลีกเลี่ยง SSLv3, TLSv1, TLSv1.1
+			sslContextFactory.setIncludeProtocols("TLSv1.2", "TLSv1.3");
 
-		// สร้าง SslConnectionFactory ---
-		// SslConnectionFactory ทำหน้าที่จัดการการเชื่อมต่อ SSL/TLS
-		SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, "http/1.1");
+			if (useTrustStore) {
 
-		// Setup HTTPS Configuration
-		HttpConfiguration httpsConf = new HttpConfiguration();
-		httpsConf.setSecurePort(server_port);
-		httpsConf.setSecureScheme("https");
-		httpsConf.addCustomizer(new SecureRequestCustomizer()); // adds ssl info to request object
+				URL truststoreUrl = Main.class.getClassLoader().getResource("/truststore.jks");
+				if (truststoreUrl != null) {
+					sslContextFactory.setTrustStorePath(truststoreUrl.toExternalForm());
+					sslContextFactory.setTrustStorePassword("password"); // รหัสผ่าน TrustStore
 
-		// Establish the HTTPS ServerConnector
-		ServerConnector httpsConnector = new ServerConnector(
-				server,
-				sslConnectionFactory,
-				new HttpConnectionFactory(httpsConf));
-		httpsConnector.setPort(server_port);
+					// ถ้าต้องการให้เซิร์ฟเวอร์ร้องขอ Client Certificate (Mutual TLS)
+					// sslContextFactory.setNeedClientAuth(true); // บังคับให้ไคลเอนต์ส่งใบรับรอง
+					// sslContextFactory.setWantClientAuth(true); // ร้องขอแต่ไม่บังคับ
+				} else {
+					System.out.println("Not found truststore.jks");
+				}
 
-		server.addConnector(httpsConnector);
+			}
 
-	}
+			// สร้าง SslConnectionFactory ---
+			// SslConnectionFactory ทำหน้าที่จัดการการเชื่อมต่อ SSL/TLS
+			SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, "http/1.1");
 
-	private static Resource findKeyStore(ResourceFactory resourceFactory) {
-		String resourceName = "/keystore.jks";
-		Resource resource = resourceFactory.newClassLoaderResource(resourceName);
-		if (!Resources.isReadableFile(resource)) {
-			throw new RuntimeException("Unable to read " + resourceName);
+			// Setup HTTPS Configuration
+			HttpConfiguration httpsConf = new HttpConfiguration();
+			httpsConf.setSecurePort(server_port);
+			httpsConf.setSecureScheme("https");
+			httpsConf.addCustomizer(new SecureRequestCustomizer()); // adds ssl info to request object
+
+			// Establish the HTTPS ServerConnector
+			ServerConnector httpsConnector = new ServerConnector(
+					server,
+					sslConnectionFactory,
+					new HttpConnectionFactory(httpsConf));
+			httpsConnector.setPort(server_port);
+
+			server.addConnector(httpsConnector);
+
 		}
-		return resource;
+
 	}
 
 	private static void addContext() throws URISyntaxException {
@@ -153,7 +167,7 @@ public class Main {
 		System.out.println("Using BaseResource: " + baseResource);
 		context.setBaseResource(baseResource);
 		context.setContextPath("/");
-		context.setWelcomeFiles(new String[] { "welcome.html" });
+		context.setWelcomeFiles(new String[] { "index.html" });
 		context.setParentLoaderPriority(true);
 		// context.getSessionHandler().setMaxInactiveInterval(900);//ไม่ผ่านต้องใช้ไฟล์ /WEB-INF/web.xml ถึงจะผ่าน ,test 7/7/68
 
@@ -171,7 +185,7 @@ public class Main {
 			protected void doGet(HttpServletRequest request, HttpServletResponse response)
 					throws ServletException, IOException {
 
-			    System.out.println("Request handled by thread: " + Thread.currentThread().getName());
+				System.out.println("Request handled by thread: " + Thread.currentThread().getName());
 				System.out.println("call /api/blocking");
 				System.out.println("request.getSession().getId() : " + request.getSession(true).getId());
 				System.out.println("session timeout : " + request.getSession().getMaxInactiveInterval());// seconds unit
