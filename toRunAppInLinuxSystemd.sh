@@ -54,7 +54,18 @@ StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=jetty-app # Identifier for logs in syslog
 
+# กำหนดเวลาที่ systemd จะรอให้แอปพลิเคชันปิดตัวลงอย่างสง่างาม
+# ก่อนที่จะส่ง SIGKILL (บังคับปิด)
+# ค่าเริ่มต้นคือ 90 วินาที
+# ตัวอย่าง: ตั้งค่าเป็น 60 วินาที (1 นาที)
+TimeoutStopSec=60s
+
 [Install]
 WantedBy=multi-user.target # บริการนี้จะถูกเรียกใช้เมื่อระบบเข้าสู่ multi-user mode (ปกติคือ boot up)
 
 ##======= จบข้อความ 
+
+sudo systemctl daemon-reload #โหลด daemon ใหม่
+sudo systemctl enable your-application.service #เปิดใช้งานบริการ (เพื่อให้รันอัตโนมัติเมื่อบูตเครื่อง)
+sudo systemctl start your-application.service #เริ่มโปรแกรม
+sudo journalctl -u your-application.service  #ดู Logs
