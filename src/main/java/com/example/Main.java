@@ -29,11 +29,14 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class Main {
 
-	static int server_port = 8080;
 	static Server server = null;
+	private int server_port = 8080;
 
 	public static void main(String[] args) throws Exception {
+		new Main().startServer();
+	}
 
+	public void startServer() {
 		try {
 
 			// == ตัวอย่าง
@@ -70,10 +73,9 @@ public class Main {
 		} catch (Exception e2) {
 			e2.printStackTrace();
 		}
-
 	}
 
-	public static void addConnector(boolean useHttps, boolean useTrustStore) throws Exception {
+	public void addConnector(boolean useHttps, boolean useTrustStore) throws Exception {
 
 		if (!useHttps) {
 
@@ -152,7 +154,7 @@ public class Main {
 
 	}
 
-	private static void addContext() throws URISyntaxException {
+	private void addContext() throws URISyntaxException {
 
 		WebAppContext context = new WebAppContext();
 
@@ -176,7 +178,7 @@ public class Main {
 
 	}
 
-	private static void addServlet(WebAppContext context) {
+	private void addServlet(WebAppContext context) {
 
 		context.addServlet(new jakarta.servlet.http.HttpServlet() {
 
@@ -201,7 +203,7 @@ public class Main {
 
 	}
 
-	private static void addWebFilter(WebAppContext context) {
+	private void addWebFilter(WebAppContext context) {
 
 		context.addFilter(new Filter() {
 
