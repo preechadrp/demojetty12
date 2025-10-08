@@ -11,6 +11,7 @@
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
+        <jetty-version>12.0.27</jetty-version>
     </properties>
 
     <dependencies>
@@ -18,29 +19,27 @@
 		<dependency>
 			<groupId>org.eclipse.jetty.ee10</groupId>
 			<artifactId>jetty-ee10-webapp</artifactId>
-			<version>12.0.23</version>
+			<version>${jetty-version}</version>
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/org.eclipse.jetty.ee10/jetty-ee10-apache-jsp -->
+		<dependency>
+		    <groupId>org.eclipse.jetty.ee10</groupId>
+		    <artifactId>jetty-ee10-apache-jsp</artifactId>
+		    <version>${jetty-version}</version>
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/ch.qos.logback/logback-classic -->
+		<dependency>
+		    <groupId>ch.qos.logback</groupId>
+		    <artifactId>logback-classic</artifactId>
+		    <version>1.5.19</version>
+		    <scope>compile</scope>
 		</dependency>
 
     </dependencies>
 
     <build>
-	   
-	   <!-- เอา dir webapp ไปด้วย -->
-		<resources	>
-      		<resource>
-        		<directory>src/main/webapp</directory>
-				<targetPath>/webapp</targetPath>
-	        	<includes>
-		          	<include>**/*</include>
-		        </includes>
-	      	</resource>
-            <resource>
-        		<directory>src/main/resources</directory>
-				<includes>
-		          	<include>**/*</include>
-		        </includes>
-	      	</resource>
-    	</resources>
 
 		<plugins>
 

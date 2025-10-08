@@ -1,11 +1,15 @@
 package com.example;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.EnumSet;
 import java.util.concurrent.Executors;
-
+import org.eclipse.jetty.ee10.apache.jsp.JettyJasperInitializer;
+import org.eclipse.jetty.ee10.jsp.JettyJspServlet;
+import org.eclipse.jetty.ee10.servlet.DefaultServlet;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -13,14 +17,12 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.util.resource.Resource;
-import org.eclipse.jetty.util.resource.ResourceFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
@@ -29,7 +31,9 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class Main {
 
-	static Server server = null;
+	static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Main.class);
+
+	public Server server = null;
 	private int server_port = 8080;
 
 	public static void main(String[] args) throws Exception {
@@ -55,23 +59,27 @@ public class Main {
 			addConnector(false, false);
 			addContext();
 
-			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-				try {
-					// ใช้เวลาหยุดเซิร์ฟเวอร์
-					System.out.println("start stop");
-					server.setStopTimeout(60 * 1000l);// รอ 60 นาทีก่อนจะบังคับปิด
-					server.stop();
-					System.out.println("Jetty server stopped gracefully");
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}));
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> stopServer()));
 
 			server.start();
 			server.join();
 
-		} catch (Exception e2) {
-			e2.printStackTrace();
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
+	}
+
+	public void stopServer() {
+		try {
+			// ใช้เวลาหยุดเซิร์ฟเวอร์
+			if (server != null && server.isStarted()) {
+				log.warn("init stop");
+				server.setStopTimeout(60 * 1000l);// รอ 60 นาทีก่อนจะบังคับปิด
+				server.stop();
+				log.info("Jetty server stopped gracefully");
+			}
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
 		}
 	}
 
@@ -126,7 +134,7 @@ public class Main {
 					// sslContextFactory.setNeedClientAuth(true); // บังคับให้ไคลเอนต์ส่งใบรับรอง
 					// sslContextFactory.setWantClientAuth(true); // ร้องขอแต่ไม่บังคับ
 				} else {
-					System.out.println("Not found truststore.jks");
+					log.warn("Not found truststore.jks");
 				}
 
 			}
@@ -154,9 +162,9 @@ public class Main {
 
 	}
 
-	private void addContext() throws URISyntaxException {
+	private void addContext() throws URISyntaxException, IOException {
 
-		WebAppContext context = new WebAppContext();
+		var context = new WebAppContext();
 
 		// add servlet
 		addServlet(context);
@@ -165,14 +173,31 @@ public class Main {
 		addWebFilter(context);
 
 		// set web resource
-		URL rscURL = Main.class.getResource("/webapp/");
-		Resource baseResource = ResourceFactory.of(context).newResource(rscURL.toURI());
-		System.out.println("Using BaseResource: " + baseResource);
-		context.setBaseResource(baseResource);
+		URL rscURL = Main.class.getResource("/webapp");
+		log.info("Using BaseResource: " + rscURL.toExternalForm());
+		context.setBaseResourceAsString(rscURL.toExternalForm());
 		context.setContextPath("/");
-		context.setWelcomeFiles(new String[] { "index.html" });
+		context.setWelcomeFiles(new String[] { "index.jsp" });
 		context.setParentLoaderPriority(true);
 		// context.getSessionHandler().setMaxInactiveInterval(900);//ไม่ผ่านต้องใช้ไฟล์ /WEB-INF/web.xml ถึงจะผ่าน ,test 7/7/68
+
+		// กำหนด Temp Directory สำหรับ JSP Compilation** 
+		// JSP ต้องมีที่เก็บไฟล์ Java ที่ถูกคอมไพล์ (Scratch directory) 
+		File tempDir = Files.createTempDirectory("jetty-jsp-scratch").toFile();
+		tempDir.deleteOnExit(); // ลบเมื่อโปรแกรมปิด 
+		context.setAttribute(ServletContext.TEMPDIR, tempDir);
+		log.info("JSP Scratch Directory: " + tempDir.getAbsolutePath());
+
+		// เพิ่ม JSP Initializer** 
+		// JSP ต้องใช้ ServletContainerInitializer ในการเริ่มต้น 
+		context.addServletContainerInitializer(new JettyJasperInitializer());
+		// เพิ่ม JSP Servlet** 
+		// เพิ่มตัวจัดการสำหรับไฟล์ *.jsp 
+		context.addServlet(new JettyJspServlet(), "*.jsp");
+
+		// เพิ่ม Default Servlet** 
+		// เพื่อจัดการไฟล์ Static (เช่น HTML, CSS) และเป็นตัว fallback 
+		context.addServlet(new DefaultServlet(), "/");
 
 		server.setHandler(context);
 
@@ -188,10 +213,10 @@ public class Main {
 			protected void doGet(HttpServletRequest request, HttpServletResponse response)
 					throws ServletException, IOException {
 
-				System.out.println("Request handled by thread: " + Thread.currentThread().getName());
-				System.out.println("call /api/blocking");
-				System.out.println("request.getSession().getId() : " + request.getSession(true).getId());
-				System.out.println("session timeout : " + request.getSession().getMaxInactiveInterval());// seconds unit
+				log.info("Request handled by thread: {}", Thread.currentThread().getName());
+				log.info("call /api/blocking");
+				log.info("request.getSession().getId() : {}", request.getSession(true).getId());
+				log.info("session timeout : {}", request.getSession().getMaxInactiveInterval());// seconds unit
 
 				response.setContentType("application/json");
 				response.setStatus(HttpServletResponse.SC_OK);
@@ -211,7 +236,7 @@ public class Main {
 			public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 					throws IOException, ServletException {
 
-				System.out.println("hello from filter");
+				log.info("hello from filter");
 
 				chain.doFilter(request, response);
 

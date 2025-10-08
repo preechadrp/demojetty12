@@ -1,2 +1,6 @@
--ตัวอย่างการใช้ jetty server 12.0.x สำหรับทำ API 
+-jetty server 12.0.x สำหรับทำ API 
 -ทำ https
+-graceful shutdown
+-รองรับ .jsp
+-รองรับ webfilter
+-logback
