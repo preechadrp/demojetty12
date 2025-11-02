@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ทดสอบการใช้ apache ant -->
+<project name="demojetty12" default="jar" basedir=".">
+
+	<property name="src.dir" location="src/main/java" />
+	<property name="res.dir" location="src/main/resources"/>
+	<property name="build.dir" location="target" />
+	<property name="classes.dir" location="${build.dir}/classes" />
+	<property name="lib.dir" location="lib" />
+	<property name="main-class" value="com.example.Main" />
+	<property name="final.jar.name" value="${ant.project.name}.jar" />
+	<property name="dev.name" value="Mr.Peepo" />
+
+	<path id="classpath">
+		<fileset dir="${lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<pathconvert property="manifest.classpath" pathsep=" ">
+		<path refid="classpath" />
+		<mapper>
+			<chainedmapper>
+				<flattenmapper />
+				<globmapper from="*.jar" to="lib/*.jar" casesensitive="no" />
+			</chainedmapper>
+		</mapper>
+	</pathconvert>
+
+	<target name="init">
+		<echo message="Creating build directories..." />
+		<mkdir dir="${classes.dir}" />
+	</target>
+
+	<target name="clean" description="Delete all generated files">
+		<echo message="Cleaning build directory..." />
+		<delete dir="${build.dir}" />
+	</target>
+
+	<target name="compile" depends="clean, init">
+		<javac destdir="${classes.dir}" includeantruntime="false">
+			<src path="${src.dir}"/>
+			<!-- <src path="${src.dir2}"/> for multi path -->
+			<classpath refid="classpath" />
+		</javac>
+		<!-- copy resource -->
+		<copy todir="${classes.dir}">
+		    <fileset dir="${res.dir}" includes="**/*"/>
+		</copy>
+	</target>
+
+	<target name="jar" depends="compile" description="Create the executable JAR file">
+		<echo message="Creating executable JAR file with 'lib/' Class-Path in Manifest..." />
+		<echo message="Class-Path : ${manifest.classpath}" /> <!-- ใช้แสดงค่าตัวแปรด้านบน -->
+		<jar destfile="${build.dir}/${final.jar.name}" basedir="${classes.dir}">
+			<manifest>
+				<attribute name="Main-Class" value="${main-class}" />
+				<attribute name="Class-Path" value="${manifest.classpath}" />
+				<attribute name="Developer" value="${dev.name}" />
+			</manifest>
+		</jar>
+
+		<echo message="Copying external libraries into 'lib' subdirectory..." />
+		<copy todir="${build.dir}/lib">
+			<fileset dir="${lib.dir}">
+				<include name="**/*.jar" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="run" depends="jar" description="Run the application">
+		<echo message="Running the application using the executable JAR..." />
+		<exec executable="java" failonerror="true">
+			<arg value="-jar" />
+			<arg path="${build.dir}/${final.jar.name}" />
+		</exec>
+	</target>
+</project>
