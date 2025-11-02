@@ -40,7 +40,7 @@
 	<target name="compile" depends="clean, init">
 		<javac destdir="${classes.dir}" includeantruntime="false">
 			<src path="${src.dir}"/>
-			<!-- <src path="${src.dir2}"/> for multi path -->
+			<!-- <src path="${src.dir2}"/> กรณีมีมากกว่า 1 ที่ -->
 			<classpath refid="classpath" />
 		</javac>
 		<!-- copy resource -->
