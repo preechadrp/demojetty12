@@ -35,9 +35,23 @@ public class Main {
 
 	public Server server = null;
 	private int server_port = 8080;
+	public static Main main = null;
 
-	public static void main(String[] args) throws Exception {
-		new Main().startServer();
+	/**
+	 * นำไปใช้กับ apache procrun ตอน start service ได้ด้วย
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		main = new Main();
+		main.startServer();
+	}
+	
+	/**
+	 * นำไปใช้กับ apache procrun ตอน stop service
+	 * @param args
+	 */
+	public static void stopService(String[] args) {
+		main.stopServer();
 	}
 
 	public void startServer() {
