@@ -45,7 +45,7 @@ public class Main {
 		main = new Main();
 		main.startServer();
 	}
-	
+
 	/**
 	 * นำไปใช้กับ apache procrun ตอน stop service
 	 * @param args
@@ -239,8 +239,8 @@ public class Main {
 			}
 
 		}, "/api/blocking");// test link = http://localhost:8080/api/blocking
-		
-		//สำหรับ shutdown ด้วย winsw ด้วย
+
+		//สำหรับ shutdown ด้วย winsw/curl ด้วย
 		context.addServlet(new jakarta.servlet.http.HttpServlet() {
 
 			private static final long serialVersionUID = -1079681049977214895L;
@@ -300,9 +300,38 @@ public class Main {
 					throws IOException, ServletException {
 
 				log.info("hello from filter");
+				HttpServletRequest httpRequest = (HttpServletRequest) request;
+				try {
+					String jwt = getBearerToken(httpRequest);
+					if (jwt != null && !jwt.isEmpty()) {
+						if (JwtUtil.verifyToken(jwt) == false) {
+							throw new IOException("unauthenticated");
+						}
+					} else {
+						log.info("No JWT provided, go on unauthenticated");
+						throw new IOException("unauthenticated");
+					}
+					chain.doFilter(request, response);
+				} catch (Exception e) {
+					log.info("Failed logging in with security token", e);
+					HttpServletResponse httpResponse = (HttpServletResponse) response;
+					httpResponse.setContentLength(0);
+					httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+				}
 
-				chain.doFilter(request, response);
+			}
 
+			/**
+			 * Get the bearer token from the HTTP request. The token is in the HTTP request
+			 * "Authorization" header in the form of: "Bearer [token]"
+			 */
+			private String getBearerToken(HttpServletRequest request) {
+				String authPrefix = "Bearer ";
+				String authHeader = request.getHeader("Authorization");
+				if (authHeader != null && authHeader.startsWith(authPrefix)) {
+					return authHeader.substring(authPrefix.length());
+				}
+				return null;
 			}
 
 		}, "/api/*", EnumSet.of(DispatcherType.REQUEST));
