@@ -328,16 +328,14 @@ public class Main {
 				try {
 					String token = getBearerToken(httpRequest);
 					if (token != null && !token.isEmpty()) {
-						if (JwtUtil.verifyToken(token) == false) {
-							throw new IOException("unauthenticated");
-						}
+						JwtUtil.verifyToken(token);
 					} else {
 						log.info("No JWT provided, go on unauthenticated");
 						throw new IOException("unauthenticated");
 					}
 					chain.doFilter(request, response);
 				} catch (Exception e) {
-					log.info("Failed logging in with security token", e);
+					log.info(e.getMessage(), e);
 					HttpServletResponse httpResponse = (HttpServletResponse) response;
 					httpResponse.setContentLength(0);
 					httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

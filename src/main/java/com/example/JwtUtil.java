@@ -5,7 +5,6 @@ import java.util.Date;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
 /**
@@ -39,34 +38,32 @@ public class JwtUtil {
 	/**
 	 * Verify a JWT
 	 * @param token
+	 * @throws Exception 
 	 */
-	public static boolean verifyToken(String token) {
-		try {
-			log.info("token: {} ", token);
-			JWTVerifier verifier = JWT.require(algorithm)
-					// specify any specific claim validations
-					.withIssuer("my-api") //ถ้าใส่ไม่ตรงจะเกิด error
-					// reusable verifier instance
-					.build();
-			DecodedJWT decodedJWT = verifier.verify(token);
-			log.info("getNotBefore: {} ", decodedJWT.getNotBefore());
-			log.info("getExpiresAt: {} ", decodedJWT.getExpiresAt());
+	public static boolean verifyToken(String token) throws Exception {
+		log.info("token: {} ", token);
+		JWTVerifier verifier = JWT.require(algorithm)
+				// specify any specific claim validations
+				.withIssuer("my-api") //ถ้าใส่ไม่ตรงจะเกิด error
+				// reusable verifier instance
+				.build();
+		DecodedJWT decodedJWT = verifier.verify(token);
+		log.info("getNotBefore: {} ", decodedJWT.getNotBefore());
+		log.info("getExpiresAt: {} ", decodedJWT.getExpiresAt());
 
-			if (decodedJWT.getExpiresAt().after(new Date(System.currentTimeMillis()))) {
-				return true;
-			} else {
-				log.info("The token has expired.");
-				return false;
-			}
-
-		} catch (JWTVerificationException e) {
-			log.error(e.getMessage(), e);
-			return false;
+		if (decodedJWT.getExpiresAt().after(new Date(System.currentTimeMillis()))) {
+			return true;
+		} else {
+			throw new Exception("The token has expired.");
 		}
 	}
 
 	public static void main(String[] args) {
-		String token = getJwt();
-		verifyToken(token);
+		try {
+			String token = getJwt();
+			verifyToken(token);	
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
 	}
 }
