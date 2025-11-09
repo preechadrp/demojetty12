@@ -75,6 +75,7 @@ public class Main {
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> stopServer()));
 
+			server.setStopTimeout(60 * 1000l);// รอ 60 นาทีก่อนจะบังคับปิด
 			server.start();
 			server.join();
 
@@ -88,7 +89,6 @@ public class Main {
 			// ใช้เวลาหยุดเซิร์ฟเวอร์
 			if (server != null && server.isStarted()) {
 				log.warn("init stop");
-				server.setStopTimeout(60 * 1000l);// รอ 60 นาทีก่อนจะบังคับปิด
 				server.stop();
 				log.info("Jetty server stopped gracefully");
 			}
