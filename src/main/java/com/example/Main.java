@@ -326,9 +326,9 @@ public class Main {
 				log.info("hello from filter");
 				HttpServletRequest httpRequest = (HttpServletRequest) request;
 				try {
-					String jwt = getBearerToken(httpRequest);
-					if (jwt != null && !jwt.isEmpty()) {
-						if (JwtUtil.verifyToken(jwt) == false) {
+					String token = getBearerToken(httpRequest);
+					if (token != null && !token.isEmpty()) {
+						if (JwtUtil.verifyToken(token) == false) {
 							throw new IOException("unauthenticated");
 						}
 					} else {
