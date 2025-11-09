@@ -3,6 +3,7 @@
 -graceful shutdown
 -รองรับ .jsp
 -รองรับ webfilter
+-การใช้ jwt
 -logback
 -การใช้ apache ant
  *ใช้คำสั่ง mvn dependency:copy-dependencies -DoutputDirectory=lib -DincludeScope=runtime  เพื่อดึงไฟล์ dependency ด้วย maven มาไว้ที่ lib directory
