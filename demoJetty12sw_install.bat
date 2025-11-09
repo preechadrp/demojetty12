@@ -1,2 +1,2 @@
-%~dp0demojetty12.exe install
+%~dp0demojetty12sw.exe install
 pause

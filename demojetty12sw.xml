@@ -1,3 +1,4 @@
+<!-- WinSW 2.12.0.0 -->
 <!-- config for WinSW , rename winsw.exe to demojetty12.exe and same xml name-->
 <service>
     <id>demojetty12</id>
@@ -15,9 +16,15 @@
     <!-- <log mode="none"/> -->
 
     <executable>"%BASE%\jre21\bin\java.exe"</executable>
-    <arguments>-Xrs -Xmx512m -jar "%BASE%\demojetty12-1.0.jar"</arguments>
+    <startarguments>-Xrs -Xmx512m -jar "%BASE%\demojetty12.jar"</startarguments>
        
-    <shutdownTimeout>30000ms</shutdownTimeout>
+    <!-- เรียก shutdown แบบปลอดภัย -->
+    <stopexecutable>"%BASE%\curl.exe"</stopexecutable>
+	<stoparguments>-s "http://127.0.0.1:8080/shutdown?token=secret123"</stoparguments>
+	<!-- กรณีไม่มี curl -->
+	<!--<stopexecutable>powershell</stopexecutable>
+	<stoparguments>-Command "Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/shutdown?token=secret123"</stoparguments>-->
 
+    <stoptimeout>60000</stoptimeout>
     <stopparentprocessfirst>false</stopparentprocessfirst>
 </service>

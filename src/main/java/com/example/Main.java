@@ -75,7 +75,7 @@ public class Main {
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> stopServer()));
 
-			server.setStopTimeout(60 * 1000l);// รอ 60 นาทีก่อนจะบังคับปิด
+			server.setStopTimeout(60000l);// รอ 60 นาทีก่อนจะบังคับปิด
 			server.start();
 			server.join();
 
@@ -239,6 +239,55 @@ public class Main {
 			}
 
 		}, "/api/blocking");// test link = http://localhost:8080/api/blocking
+		
+		//สำหรับ shutdown ด้วย winsw ด้วย
+		context.addServlet(new jakarta.servlet.http.HttpServlet() {
+
+			private static final long serialVersionUID = -1079681049977214895L;
+
+			@Override
+			protected void doGet(HttpServletRequest request, HttpServletResponse response)
+					throws ServletException, IOException {
+
+				log.info("Requested Shutdown");
+
+				//จำกัดให้เรียกได้เฉพาะ localhost
+				String remoteAddr = request.getRemoteAddr();
+				if (!"127.0.0.1".equals(remoteAddr) && !"0:0:0:0:0:0:0:1".equals(remoteAddr)) {
+					response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+					response.getWriter().println("Access denied");
+					log.warn("Rejected shutdown from: {}", remoteAddr);
+					return;
+				}
+
+				//ตรวจ token
+				String tokenParam = request.getParameter("token");
+				if (!"secret123".equals(tokenParam)) {
+					response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+					response.getWriter().println("Invalid token");
+					log.warn("Invalid token");
+					return;
+				}
+
+				//เริ่มหยุด Jetty
+				response.setStatus(HttpServletResponse.SC_OK);
+				response.getWriter().println("Shutting down Jetty...");
+
+				log.warn(">>> Shutdown requested via /shutdown from {}", remoteAddr);
+
+				new Thread(() -> {
+					try {
+						Thread.sleep(500); // รอให้ response ส่งกลับ
+						server.stop();
+						log.info(">>> Jetty stopped gracefully.");
+					} catch (Exception e) {
+						log.error(e.getMessage(), e);
+					}
+				}).start();
+
+			}
+
+		}, "/shutdown");// test link = http://localhost:8080/shutdown
 
 	}
 
