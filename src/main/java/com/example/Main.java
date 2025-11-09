@@ -7,6 +7,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.EnumSet;
 import java.util.concurrent.Executors;
+
 import org.eclipse.jetty.ee10.apache.jsp.JettyJasperInitializer;
 import org.eclipse.jetty.ee10.jsp.JettyJspServlet;
 import org.eclipse.jetty.ee10.servlet.DefaultServlet;
@@ -19,6 +20,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -219,27 +221,6 @@ public class Main {
 
 	private void addServlet(WebAppContext context) {
 
-		context.addServlet(new jakarta.servlet.http.HttpServlet() {
-
-			private static final long serialVersionUID = -1079681049977214895L;
-
-			@Override
-			protected void doGet(HttpServletRequest request, HttpServletResponse response)
-					throws ServletException, IOException {
-
-				log.info("Request handled by thread: {}", Thread.currentThread().getName());
-				log.info("call /api/blocking");
-				log.info("request.getSession().getId() : {}", request.getSession(true).getId());
-				log.info("session timeout : {}", request.getSession().getMaxInactiveInterval());// seconds unit
-
-				response.setContentType("application/json");
-				response.setStatus(HttpServletResponse.SC_OK);
-				response.getWriter().println("{ \"status\": \"ok\"}");
-
-			}
-
-		}, "/api/blocking");// test link = http://localhost:8080/api/blocking
-
 		//สำหรับ shutdown ด้วย winsw/curl ด้วย
 		context.addServlet(new jakarta.servlet.http.HttpServlet() {
 
@@ -288,6 +269,49 @@ public class Main {
 			}
 
 		}, "/shutdown");// test link = http://localhost:8080/shutdown
+
+		context.addServlet(new jakarta.servlet.http.HttpServlet() {
+
+			private static final long serialVersionUID = -1079681049977214895L;
+
+			@Override
+			protected void doGet(HttpServletRequest request, HttpServletResponse response)
+					throws ServletException, IOException {
+
+				log.info("Request handled by thread: {}", Thread.currentThread().getName());
+				log.info("request.getSession().getId() : {}", request.getSession(true).getId());
+				log.info("session timeout : {}", request.getSession().getMaxInactiveInterval());// seconds unit
+
+				response.setContentType("application/json");
+				response.setStatus(HttpServletResponse.SC_OK);
+				//java.util.Base64.getEncoder().encode(JwtUtil.getJwt().getBytes("UTF-8"))
+				//System.out.println(java.util.Base64.getEncoder().encode(JwtUtil.getJwt().));
+				response.getWriter().println("{ \"jwt\": \"" + JwtUtil.getJwt() + "\"}");
+
+			}
+
+		}, "/getjwt");// test link = http://localhost:8080/getjwt
+
+		context.addServlet(new jakarta.servlet.http.HttpServlet() {
+
+			private static final long serialVersionUID = -1079681049977214895L;
+
+			@Override
+			protected void doPost(HttpServletRequest request, HttpServletResponse response)
+					throws ServletException, IOException {
+
+				log.info("Request handled by thread: {}", Thread.currentThread().getName());
+				log.info("call /api/blocking");
+				log.info("request.getSession().getId() : {}", request.getSession(true).getId());
+				log.info("session timeout : {}", request.getSession().getMaxInactiveInterval());// seconds unit
+
+				response.setContentType("application/json");
+				response.setStatus(HttpServletResponse.SC_OK);
+				response.getWriter().println("{ \"status\": \"ok\"}");
+
+			}
+
+		}, "/api/blocking");// test link = http://localhost:8080/api/blocking
 
 	}
 

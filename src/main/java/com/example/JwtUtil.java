@@ -32,7 +32,7 @@ public class JwtUtil {
 				.withExpiresAt(new Date(System.currentTimeMillis() + 3600_000)) // 1 ชม.
 				.sign(algorithm);
 
-		log.info("JWT: {} ", token);
+		log.info("token: {} ", token);
 		return token;
 	}
 
@@ -42,17 +42,17 @@ public class JwtUtil {
 	 */
 	public static boolean verifyToken(String token) {
 		try {
+			log.info("token: {} ", token);
 			JWTVerifier verifier = JWT.require(algorithm)
 					// specify any specific claim validations
 					.withIssuer("my-api") //ถ้าใส่ไม่ตรงจะเกิด error
 					// reusable verifier instance
 					.build();
-
 			DecodedJWT decodedJWT = verifier.verify(token);
 			log.info("getNotBefore: {} ", decodedJWT.getNotBefore());
 			log.info("getExpiresAt: {} ", decodedJWT.getExpiresAt());
 
-			if (decodedJWT.getExpiresAt().before(new Date(System.currentTimeMillis()))) {
+			if (decodedJWT.getExpiresAt().after(new Date(System.currentTimeMillis()))) {
 				return true;
 			} else {
 				log.info("The token has expired.");
