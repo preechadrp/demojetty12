@@ -44,8 +44,34 @@ public class Main {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		main = new Main();
-		main.startServer();
+		if (args != null && args.length > 0 && args[0].trim().equals("shutdown")) {
+			stopServiceByUrl();
+		} else {
+			main = new Main();
+			main.startServer();
+		}
+	}
+
+	private static void stopServiceByUrl() {
+		try {
+			java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+
+			java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+					.uri(java.net.URI.create("http://127.0.0.1:8080/shutdown?token=secret123"))
+					.GET()
+					.build();
+
+			// ส่ง Request และรับ Response
+			java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
+
+			// แสดงผลลัพธ์
+			if (response.statusCode() != 200) {
+				log.info("Status code: {}", response.statusCode());
+				log.info(response.body());
+			}
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
 	}
 
 	/**
@@ -260,7 +286,7 @@ public class Main {
 					try {
 						Thread.sleep(500); // รอให้ response ส่งกลับ
 						server.stop();
-						log.info(">>> Jetty stopped gracefully.");
+						log.info("Jetty server stopped gracefully.");
 					} catch (Exception e) {
 						log.error(e.getMessage(), e);
 					}

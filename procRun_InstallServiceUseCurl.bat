@@ -18,9 +18,8 @@ echo Installing %SERVICE_NAME% ...
   --StartImage="%JAVA_HOME%\bin\java.exe" ^
   --StartParams=-Xmx512m;-jar;%JAR_FILE% ^
   --StopMode=exe ^
-  --StopPath="%WK_PATH%" ^
-  --StopImage="%JAVA_HOME%\bin\java.exe" ^
-  --StopParams=-Xmx256m;-jar;%JAR_FILE%;shutdown ^
+  --StopImage="%WK_PATH%\curl.exe" ^
+  --StopParams=-s;http://127.0.0.1:8080/shutdown?token=secret123 ^
   --LogPath="%WK_PATH%\logs" ^
   --LogPrefix=service ^
   --LogLevel=Info
