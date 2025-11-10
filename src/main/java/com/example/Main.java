@@ -115,7 +115,7 @@ public class Main {
 	public void stopServer() {
 		try {
 			// ใช้เวลาหยุดเซิร์ฟเวอร์
-			if (server != null && server.isStarted()) {
+			if (server != null && server.isRunning()) {
 				log.warn("init stop");
 				server.stop();
 				log.info("Jetty server stopped gracefully");
