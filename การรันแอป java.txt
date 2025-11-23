@@ -1,0 +1,28 @@
+=== การรันแอปด้วย -cp ===
+- java -cp <ชื่อ_ไฟล์>.jar <ชื่อ_คลาส_หลัก_แบบ_เต็ม>  
+  เช่น java -cp myApp.jar com.mycompany.MyApp
+- การรันคลาสหลักที่ไม่ได้อยู่ในไฟล์ .jar แต่อยู่ในโฟลเดอร์ปัจจุบัน
+  รูปแบบ
+   java -cp .:lib/library1.jar:lib/library2.jar <ชื่อ_คลาส_หลัก_แบบ_เต็ม>
+  เช่น
+   java -cp .:lib/gson-2.8.jar MainApp    for linux
+   java -cp .;lib\gson-2.8.jar MainApp    for windows
+   (สำหรับ Windows ใช้ ; แทน :)
+-การรันไฟล์ .jar โดยใช้ Wildcard (Java 6+)
+  รูปแบบ
+    java -cp <โฟลเดอร์_ไลบรารี>/*:<ชื่อ_ไฟล์>.jar <ชื่อ_คลาส_หลัก_แบบ_เต็ม>
+  เช่น 
+    java -cp libs/*:myApplication.jar com.project.Start
+	
+=== ข้อควรทราบ ===
+1.-cp vs. -jar:
+  java -jar <file>.jar: เป็นวิธีมาตรฐานในการรันไฟล์ .jar ที่ถูกบรรจุอย่างสมบูรณ์ (ต้องระบุ Main-Class ใน MANIFEST.MF ภายในไฟล์ .jar)
+  java -cp ... <Class>: เป็นการระบุ Classpath และบอก Java ว่าจะรัน คลาส ไหนโดยตรง (Main-Class ในไฟล์ .jar จะถูกละเลย)
+
+2.ตัวคั่น (Separator):
+  Linux/macOS: ใช้เครื่องหมาย โคลอน (:)
+  Windows: ใช้เครื่องหมาย เซมิโคลอน (;)
+
+3.โฟลเดอร์ปัจจุบัน (.): 
+  หากคุณต้องการให้ Java มองหาคลาสในโฟลเดอร์ที่คุณรันคำสั่งอยู่ด้วย คุณต้องรวม . (จุดเดียว) เข้าไปใน Classpath ด้วย
+  
