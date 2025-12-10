@@ -19,7 +19,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.eclipse.jetty.util.thread.VirtualThreadPool;
 
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
@@ -90,7 +90,7 @@ public class Main {
 			// การหา resource แบบปลอดภัย
 			// ทำ stop gracefull
 
-			var threadPool = new QueuedThreadPool();
+			var threadPool = new VirtualThreadPool();
 			//กำหนดให้ทำงานแบบ Virtual Threads
 			// threadPool.setVirtualThreadsExecutor(Executors.newVirtualThreadPerTaskExecutor());
 			// สามารถกำหนดชื่อ prefix ของ Virtual Threads ได้เพื่อการ Debug

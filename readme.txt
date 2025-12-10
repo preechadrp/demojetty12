@@ -1,4 +1,5 @@
 -jetty server 12.0.x สำหรับทำ API 
+-virtual thread
 -ทำ https
 -graceful shutdown
 -รองรับ .jsp
