@@ -36,7 +36,8 @@ public class Main {
 	static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Main.class);
 
 	public Server server = null;
-	private int server_port = 8080;
+	private int http_server_port = 8080;
+	private int https_server_port = 8443;
 	public static Main main = null;
 
 	/**
@@ -98,7 +99,8 @@ public class Main {
 
 			server = new Server(threadPool);
 
-			addConnector(false, false);
+			addHttpConnector();
+			//addHttpsConnector(true);
 			addContext();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> stopServer()));
@@ -125,82 +127,67 @@ public class Main {
 		}
 	}
 
-	public void addConnector(boolean useHttps, boolean useTrustStore) throws Exception {
+	public void addHttpConnector() throws Exception {
+		ServerConnector httpConnector = new ServerConnector(server);
+		httpConnector.setPort(http_server_port);
+		server.addConnector(httpConnector);
+	}
+	
+	public void addHttpsConnector(boolean useTrustStore) throws Exception {
 
-		if (!useHttps) {
+		// Setup HTTPS Configuration
+		HttpConfiguration httpsConf = new HttpConfiguration();
+		httpsConf.setSecurePort(https_server_port);
+		httpsConf.setSecureScheme("https");
+		httpsConf.addCustomizer(new SecureRequestCustomizer()); // adds ssl info to request object
 
-			ServerConnector httpConnector = new ServerConnector(server);
-			httpConnector.setPort(server_port);
-			server.addConnector(httpConnector);
+		// Setup SSL
+		SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 
-		} else { // เมื่อต้องการทำ https  หมายเหตุยังไม่ทดสอบ
+		// กำหนด KeyStore (สำหรับ Server Certificate)
+		sslContextFactory.setKeyStorePath("./keystore.jks"); //แบบดึงจาก working directory
+		sslContextFactory.setKeyStorePassword("mykeystore");
+		sslContextFactory.setKeyManagerPassword("mykeystoreManagerPassword");
 
-			// ======== https =======
-			// Setup SSL
-			SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
+		String[] allowedCiphers = {
+				 "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+				 "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+				// เพิ่ม Cipher Suites อื่นๆ ที่คุณต้องการ (และรองรับใน JVM ของคุณ)
+				// หลีกเลี่ยง Cipher Suites ที่มี SHA1, RC4, 3DES, หรือไม่มี Forward Secrecy
+				//หรือถ้าใช้ TLS 1.3 เป็นหลัก → ไม่ต้องตั้ง cipher เลยก็ได้ (ปล่อย JVM เลือก)
+		};
+		if (allowedCiphers.length > 0) {
+			sslContextFactory.setIncludeCipherSuites(allowedCiphers);
+		}
 
-			// กำหนด KeyStore (สำหรับ Server Certificate)
-			// ตรวจสอบให้แน่ใจว่าไฟล์ keystore.jks อยู่ใน classpath หรือระบุพาธที่ถูกต้อง
-			URL keystoreUrl = Main.class.getClassLoader().getResource("/keystore.jks");
-			if (keystoreUrl == null) {
-				throw new IllegalStateException("keystore.jks not found in classpath. Please ensure it's in src/main/resources or similar.");
+		// กำหนด Protocol ที่อนุญาต (Allowed Protocols) ***
+		// ควรใช้ TLSv1.2 และ TLSv1.3 เท่านั้น หลีกเลี่ยง SSLv3, TLSv1, TLSv1.1
+		sslContextFactory.setIncludeProtocols("TLSv1.2", "TLSv1.3");
+
+		if (useTrustStore) {
+
+			URL truststoreUrl = Main.class.getClassLoader().getResource("truststore.jks"); //แบบดึงใน .jar ตอน dev อยู่ใน src/main/resources/truststore.jks
+			if (truststoreUrl != null) {
+				sslContextFactory.setTrustStorePath(truststoreUrl.toExternalForm());
+				sslContextFactory.setTrustStorePassword("password"); // รหัสผ่าน TrustStore
+
+				// ถ้าต้องการให้เซิร์ฟเวอร์ร้องขอ Client Certificate (Mutual TLS)
+				// sslContextFactory.setNeedClientAuth(true); // บังคับให้ไคลเอนต์ส่งใบรับรอง
+				// sslContextFactory.setWantClientAuth(true); // ร้องขอแต่ไม่บังคับ
+			} else {
+				log.warn("Not found truststore.jks");
 			}
-			sslContextFactory.setKeyStorePath(keystoreUrl.toExternalForm());
-			sslContextFactory.setKeyStorePassword("mykeystore");
-			sslContextFactory.setKeyManagerPassword("mykeystore");
-
-			String[] allowedCiphers = {
-					"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-					"TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-					"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-					"TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"
-					// เพิ่ม Cipher Suites อื่นๆ ที่คุณต้องการ (และรองรับใน JVM ของคุณ)
-					// หลีกเลี่ยง Cipher Suites ที่มี SHA1, RC4, 3DES, หรือไม่มี Forward Secrecy
-			};
-			if (allowedCiphers.length > 0) {
-				sslContextFactory.setIncludeCipherSuites(allowedCiphers);
-			}
-
-			// กำหนด Protocol ที่อนุญาต (Allowed Protocols) ***
-			// ควรใช้ TLSv1.2 และ TLSv1.3 เท่านั้น หลีกเลี่ยง SSLv3, TLSv1, TLSv1.1
-			sslContextFactory.setIncludeProtocols("TLSv1.2", "TLSv1.3");
-
-			if (useTrustStore) {
-
-				URL truststoreUrl = Main.class.getClassLoader().getResource("/truststore.jks");
-				if (truststoreUrl != null) {
-					sslContextFactory.setTrustStorePath(truststoreUrl.toExternalForm());
-					sslContextFactory.setTrustStorePassword("password"); // รหัสผ่าน TrustStore
-
-					// ถ้าต้องการให้เซิร์ฟเวอร์ร้องขอ Client Certificate (Mutual TLS)
-					// sslContextFactory.setNeedClientAuth(true); // บังคับให้ไคลเอนต์ส่งใบรับรอง
-					// sslContextFactory.setWantClientAuth(true); // ร้องขอแต่ไม่บังคับ
-				} else {
-					log.warn("Not found truststore.jks");
-				}
-
-			}
-
-			// สร้าง SslConnectionFactory ---
-			// SslConnectionFactory ทำหน้าที่จัดการการเชื่อมต่อ SSL/TLS
-			SslConnectionFactory sslConnectionFactory = new SslConnectionFactory(sslContextFactory, "http/1.1");
-
-			// Setup HTTPS Configuration
-			HttpConfiguration httpsConf = new HttpConfiguration();
-			httpsConf.setSecurePort(server_port);
-			httpsConf.setSecureScheme("https");
-			httpsConf.addCustomizer(new SecureRequestCustomizer()); // adds ssl info to request object
-
-			// Establish the HTTPS ServerConnector
-			ServerConnector httpsConnector = new ServerConnector(
-					server,
-					sslConnectionFactory,
-					new HttpConnectionFactory(httpsConf));
-			httpsConnector.setPort(server_port);
-
-			server.addConnector(httpsConnector);
 
 		}
+
+		// Establish the HTTPS ServerConnector
+		ServerConnector httpsConnector = new ServerConnector(
+				server,
+				new SslConnectionFactory(sslContextFactory, "http/1.1"),
+				new HttpConnectionFactory(httpsConf));
+		httpsConnector.setPort(https_server_port);
+
+		server.addConnector(httpsConnector);
 
 	}
 
