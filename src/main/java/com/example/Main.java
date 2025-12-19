@@ -7,6 +7,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.EnumSet;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.jetty.ee10.apache.jsp.JettyJasperInitializer;
 import org.eclipse.jetty.ee10.jsp.JettyJspServlet;
@@ -39,6 +40,9 @@ public class Main {
 	private int http_server_port = 8080;
 	private int https_server_port = 8443;
 	public static Main main = null;
+	public static final boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("window") >= 0;
+	private static final AtomicBoolean inShutdownHook = new AtomicBoolean(false);
+	private static final AtomicBoolean stopping = new AtomicBoolean(false);
 
 	/**
 	 * นำไปใช้กับ apache procrun ตอน start service ได้ด้วย
@@ -103,7 +107,10 @@ public class Main {
 			//addHttpsConnector(true);
 			addContext();
 
-			Runtime.getRuntime().addShutdownHook(new Thread(() -> stopServer()));
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+				inShutdownHook.set(true);
+				stopServer();
+			}));
 
 			server.setStopTimeout(60000l);// รอ 60 นาทีก่อนจะบังคับปิด
 			server.start();
@@ -115,15 +122,26 @@ public class Main {
 	}
 
 	public void stopServer() {
+		if (!stopping.compareAndSet(false, true)) {
+	        log.info("Shutdown already in progress");
+	        return;
+	    }
+		int exitCode = 0;
 		try {
 			// ใช้เวลาหยุดเซิร์ฟเวอร์
 			if (server != null && server.isRunning()) {
 				log.warn("init stop");
 				server.stop();
+				server.destroy();
 				log.info("Jetty server stopped gracefully");
 			}
 		} catch (Exception e) {
+			exitCode = 1;
 			log.error(e.getMessage(), e);
+		} finally {
+			if (isWindows && !inShutdownHook.get()) {
+	            System.exit(exitCode);
+	        }
 		}
 	}
 
