@@ -43,6 +43,7 @@ public class Main {
 	public static final boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("window") >= 0;
 	private static final AtomicBoolean inShutdownHook = new AtomicBoolean(false);
 	private static final AtomicBoolean stopping = new AtomicBoolean(false);
+	private static final String urlShutdownPassword = "myPass123";
 
 	/**
 	 * นำไปใช้กับ apache procrun ตอน start service ได้ด้วย
@@ -62,7 +63,7 @@ public class Main {
 			java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
 
 			java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-					.uri(java.net.URI.create("http://127.0.0.1:8080/shutdown?token=secret123"))
+					.uri(java.net.URI.create("http://127.0.0.1:8080/shutdown?token=" + urlShutdownPassword))
 					.GET()
 					.build();
 
@@ -213,7 +214,7 @@ public class Main {
 		var context = new WebAppContext();
 
 		// add servlet
-		addServlet(context);
+		addMainApi(context);
 
 		// add filter
 		addWebFilter(context);
@@ -232,7 +233,18 @@ public class Main {
 		File tempDir = Files.createTempDirectory("jetty-jsp-scratch").toFile();
 		tempDir.deleteOnExit(); // ลบเมื่อโปรแกรมปิด 
 		context.setAttribute(ServletContext.TEMPDIR, tempDir);
-		log.info("JSP Scratch Directory: " + tempDir.getAbsolutePath());
+		log.info("JSP Scratch Directory (getAbsolutePath): " + tempDir.getAbsolutePath());
+		log.info("JSP Scratch Directory (getPath): " + tempDir.getPath());
+		log.info("JSP Scratch Directory (getCanonicalPath): " + tempDir.getCanonicalPath());
+		log.info("JSP Scratch Directory (getCanonicalFile): " + tempDir.getCanonicalFile());
+		
+		/*
+		 * ตัวอย่าง path ต่างๆ
+		 JSP Scratch Directory (getAbsolutePath):  C:\Users\HP12D5~1\AppData\Local\Temp\jetty-jsp-scratch16538553756296998470
+		 JSP Scratch Directory (getPath):          C:\Users\HP12D5~1\AppData\Local\Temp\jetty-jsp-scratch16538553756296998470
+         JSP Scratch Directory (getCanonicalPath): C:\Users\H P\AppData\Local\Temp\jetty-jsp-scratch16538553756296998470
+         JSP Scratch Directory (getCanonicalFile): C:\Users\H P\AppData\Local\Temp\jetty-jsp-scratch16538553756296998470
+		 */
 
 		// เพิ่ม JSP Initializer** 
 		// JSP ต้องใช้ ServletContainerInitializer ในการเริ่มต้น 
@@ -248,8 +260,8 @@ public class Main {
 		server.setHandler(context);
 
 	}
-
-	private void addServlet(WebAppContext context) {
+	
+	private void addMainApi(WebAppContext context) {
 
 		//สำหรับ shutdown ด้วย winsw/curl ด้วย
 		context.addServlet(new jakarta.servlet.http.HttpServlet() {
@@ -273,7 +285,7 @@ public class Main {
 
 				//ตรวจ token
 				String tokenParam = request.getParameter("token");
-				if (!"secret123".equals(tokenParam)) {
+				if (!urlShutdownPassword.equals(tokenParam)) {
 					response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 					response.getWriter().println("Invalid token");
 					log.warn("Invalid token");
