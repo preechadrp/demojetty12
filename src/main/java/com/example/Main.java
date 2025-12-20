@@ -37,8 +37,8 @@ public class Main {
 	static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Main.class);
 
 	public Server server = null;
-	private int http_server_port = 8080;
-	private int https_server_port = 8443;
+	int http_server_port = 8080;
+	int https_server_port = 8443;
 	public static Main main = null;
 	public static final boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("window") >= 0;
 	private static final AtomicBoolean inShutdownHook = new AtomicBoolean(false);
@@ -104,8 +104,8 @@ public class Main {
 
 			server = new Server(threadPool);
 
-			addHttpConnector();
-			//addHttpsConnector(true);
+			addHttpConnector(http_server_port);
+			//addHttpsConnector(https_server_port, true);
 			addContext();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -145,17 +145,17 @@ public class Main {
 		}
 	}
 
-	public void addHttpConnector() throws Exception {
+	public void addHttpConnector(int port) throws Exception {
 		ServerConnector httpConnector = new ServerConnector(server);
-		httpConnector.setPort(http_server_port);
+		httpConnector.setPort(port);
 		server.addConnector(httpConnector);
 	}
 	
-	public void addHttpsConnector(boolean useTrustStore) throws Exception {
+	public void addHttpsConnector(int port, boolean useTrustStore) throws Exception {
 
 		// Setup HTTPS Configuration
 		HttpConfiguration httpsConf = new HttpConfiguration();
-		httpsConf.setSecurePort(https_server_port);
+		httpsConf.setSecurePort(port);
 		httpsConf.setSecureScheme("https");
 		httpsConf.addCustomizer(new SecureRequestCustomizer()); // adds ssl info to request object
 
@@ -184,17 +184,16 @@ public class Main {
 
 		if (useTrustStore) {
 
-			URL truststoreUrl = Main.class.getClassLoader().getResource("truststore.jks"); //แบบดึงใน .jar ตอน dev อยู่ใน src/main/resources/truststore.jks
-			if (truststoreUrl != null) {
-				sslContextFactory.setTrustStorePath(truststoreUrl.toExternalForm());
-				sslContextFactory.setTrustStorePassword("password"); // รหัสผ่าน TrustStore
+			//แบบดึงใน .jar ตอน dev อยู่ใน src/main/resources/truststore.jks
+			//URL truststoreUrl = Main.class.getClassLoader().getResource("truststore.jks"); 
+			//sslContextFactory.setTrustStorePath(truststoreUrl.toExternalForm());
+			
+			sslContextFactory.setTrustStorePath("./truststore.jks");
+			sslContextFactory.setTrustStorePassword("password"); // รหัสผ่าน TrustStore
 
-				// ถ้าต้องการให้เซิร์ฟเวอร์ร้องขอ Client Certificate (Mutual TLS)
-				// sslContextFactory.setNeedClientAuth(true); // บังคับให้ไคลเอนต์ส่งใบรับรอง
-				// sslContextFactory.setWantClientAuth(true); // ร้องขอแต่ไม่บังคับ
-			} else {
-				log.warn("Not found truststore.jks");
-			}
+			// ถ้าต้องการให้เซิร์ฟเวอร์ร้องขอ Client Certificate (Mutual TLS)
+			// sslContextFactory.setNeedClientAuth(true); // บังคับให้ไคลเอนต์ส่งใบรับรอง
+			// sslContextFactory.setWantClientAuth(true); // ร้องขอแต่ไม่บังคับ
 
 		}
 
@@ -203,7 +202,7 @@ public class Main {
 				server,
 				new SslConnectionFactory(sslContextFactory, "http/1.1"),
 				new HttpConnectionFactory(httpsConf));
-		httpsConnector.setPort(https_server_port);
+		httpsConnector.setPort(port);
 
 		server.addConnector(httpsConnector);
 
