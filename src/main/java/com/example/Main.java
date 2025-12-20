@@ -128,12 +128,11 @@ public class Main {
 	    }
 		int exitCode = 0;
 		try {
-			// ใช้เวลาหยุดเซิร์ฟเวอร์
 			if (server != null && server.isRunning()) {
 				log.warn("init stop");
 				server.stop();
 				server.destroy();
-				log.info("Jetty server stopped gracefully");
+				log.info("Server stopped gracefully");
 			}
 		} catch (Exception e) {
 			exitCode = 1;
@@ -290,8 +289,7 @@ public class Main {
 				new Thread(() -> {
 					try {
 						Thread.sleep(500); // รอให้ response ส่งกลับ
-						server.stop();
-						log.info("Jetty server stopped gracefully.");
+						stopServer();
 					} catch (Exception e) {
 						log.error(e.getMessage(), e);
 					}
