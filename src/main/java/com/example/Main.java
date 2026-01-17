@@ -41,7 +41,6 @@ public class Main {
 	int https_server_port = 8443;
 	public static Main main = null;
 	public static final boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("window") >= 0;
-	private static final AtomicBoolean inShutdownHook = new AtomicBoolean(false);
 	private static final AtomicBoolean stopping = new AtomicBoolean(false);
 	private static final String urlShutdownPassword = "myPass123";
 
@@ -85,7 +84,7 @@ public class Main {
 	 * @param args
 	 */
 	public static void stopService(String[] args) {
-		main.stopServer();
+		main.stopServer(false);
 	}
 
 	public void startServer() {
@@ -108,9 +107,9 @@ public class Main {
 			//addHttpsConnector(https_server_port, true);
 			addContext();
 
+			//กรณีกด ctr+c หรือ stop จาก docker หรือ คำสั่ง System.exit() จะทำ process ใน addShutdownHook นี้
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-				inShutdownHook.set(true);
-				stopServer();
+				stopServer(true);
 			}));
 
 			server.setStopTimeout(60000l);// รอ 60 นาทีก่อนจะบังคับปิด
@@ -122,7 +121,7 @@ public class Main {
 		}
 	}
 
-	public void stopServer() {
+	public void stopServer(boolean isShutdownHook) {
 		if (!stopping.compareAndSet(false, true)) {
 	        log.info("Shutdown already in progress");
 	        return;
@@ -139,8 +138,8 @@ public class Main {
 			exitCode = 1;
 			log.error(e.getMessage(), e);
 		} finally {
-			if (isWindows && !inShutdownHook.get()) {
-	            System.exit(exitCode);
+			if (isWindows && !isShutdownHook) {
+	            System.exit(exitCode);//คำสั่งนี้ไปเรียก addShutdownHook อีกครั้ง
 	        }
 		}
 	}
@@ -300,7 +299,7 @@ public class Main {
 				new Thread(() -> {
 					try {
 						Thread.sleep(500); // รอให้ response ส่งกลับ
-						stopServer();
+						stopServer(false);
 					} catch (Exception e) {
 						log.error(e.getMessage(), e);
 					}
