@@ -13,6 +13,7 @@ import org.eclipse.jetty.ee10.apache.jsp.JettyJasperInitializer;
 import org.eclipse.jetty.ee10.jsp.JettyJspServlet;
 import org.eclipse.jetty.ee10.servlet.DefaultServlet;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
+import org.eclipse.jetty.server.ForwardedRequestCustomizer;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
@@ -102,9 +103,17 @@ public class Main {
 			threadPool.setVirtualThreadsExecutor(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("jetty-vt-", 0).factory()));
 
 			server = new Server(threadPool);
+			//ดึงจาก System property การส่งมา เช่น java -Djetty.https.enabled=true -jar app.jar
+			//ถ้าไม่เจอดึงจากตัวแปรระบบ
+			boolean enableJettyHttps = Boolean.parseBoolean(
+					System.getProperty("jetty.https.enabled",
+							System.getenv().getOrDefault("JETTY_HTTPS_ENABLED", "false")));
 
-			addHttpConnector(http_server_port);
-			//addHttpsConnector(https_server_port, true);
+			if (enableJettyHttps == false) {
+				addHttpConnector(http_server_port);
+			} else {
+				addHttpsConnector(https_server_port, true);
+			}
 			addContext();
 
 			//กรณีกด ctr+c หรือ stop จาก docker หรือ คำสั่ง System.exit() จะทำ process ใน addShutdownHook นี้
@@ -145,7 +154,13 @@ public class Main {
 	}
 
 	public void addHttpConnector(int port) throws Exception {
-		ServerConnector httpConnector = new ServerConnector(server);
+		HttpConfiguration httpConf = new HttpConfiguration();
+
+		httpConf.addCustomizer(new ForwardedRequestCustomizer()); //Jetty อยู่ หลัง nginx / proxy , อ่าน header จาก proxy: แล้ว “หลอก” Jetty ว่า request เดิมเป็น HTTPS
+
+		ServerConnector httpConnector = new ServerConnector(
+				server,
+				new HttpConnectionFactory(httpConf));
 		httpConnector.setPort(port);
 		server.addConnector(httpConnector);
 	}
@@ -156,7 +171,8 @@ public class Main {
 		HttpConfiguration httpsConf = new HttpConfiguration();
 		httpsConf.setSecurePort(port);
 		httpsConf.setSecureScheme("https");
-		httpsConf.addCustomizer(new SecureRequestCustomizer()); // adds ssl info to request object
+		
+		httpsConf.addCustomizer(new SecureRequestCustomizer()); // Jetty ทำ HTTPS เอง
 
 		// Setup SSL
 		SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
