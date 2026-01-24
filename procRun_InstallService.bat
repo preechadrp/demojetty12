@@ -19,7 +19,7 @@ echo Installing %SERVICE_NAME% ...
         --DisplayName="Demo Jetty 12" ^
         --Description="Jetty embedded running via Apache Procrun" ^
         --Install="%EXE_PATH%" ^
-        --Jvm="%WK_PATH%\jre\bin\server\jvm.dll" ^
+        --Jvm="%WK_PATH%\jre\bin\server\jvm.dll" --StartPath="%WK_PATH%" ^
         --JvmOptions=-Xmx512m;-Xrs ^
         --Startup=auto --StartMode=jvm --StopMode=jvm ^
         --Classpath="%JAR_FILE%" ^
