@@ -40,14 +40,37 @@ public class Main {
 	public Server server = null;
 	int http_server_port = 8080;
 	int https_server_port = 8443;
-	public static Main main = null;
 	public static final boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("window") >= 0;
+	public static Main main = null;
 
+	/**
+	 * สำหรับ winsw  ผ่าน java -jar myapp.jar
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		main = new Main();
-		main.startServer();
+		main.startServer();	
 	}
-
+	
+	/**
+	 * สำหรับ apache procrun ใน mode = jvm
+	 * @param args
+	 */
+	public static void startApp(String[] args) {
+		main = new Main();
+		main.startServer();	
+	}
+	
+	/**
+	 * สำหรับ apache procrun ใน mode = jvm
+	 * @param args
+	 */
+	public static void stopApp(String[] args) {
+		if (main != null) {
+	        main.stopServer();
+	    }
+	}
+	
 	public void startServer() {
 		try {
 
@@ -99,6 +122,22 @@ public class Main {
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 		}
+	}
+	
+	/**
+	 * สำหรับ apache procrun mode jvm
+	 */
+	public void stopServer() {
+	    try {
+	        if (server != null && server.isRunning()) {
+	            server.stop();
+	            server.join();   // ⭐ รอให้ stop เสร็จก่อน
+	        }
+	    } catch (Exception e) {
+	        log.error(e.getMessage(), e);
+	    } finally {
+	        System.exit(0);
+	    }
 	}
 	
 	public void addHttpConnector(int port) throws Exception {
