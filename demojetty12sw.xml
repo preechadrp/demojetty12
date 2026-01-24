@@ -18,9 +18,9 @@
     <executable>"%BASE%\jre21\bin\java.exe"</executable>
     <startarguments>-Xrs -Xmx512m -jar "%BASE%\demojetty12.jar"</startarguments>
        
-    <!-- เรียก shutdown แบบปลอดภัย -->
-    <stopexecutable>"%BASE%\jre21\bin\java.exe"</stopexecutable>
-	<stoparguments>-Xrs -Xmx512m -jar "%BASE%\demojetty12.jar" shutdown</stoparguments>
+    <!-- เรียก shutdown แบบ url -->
+    <!-- <stopexecutable>"%BASE%\jre21\bin\java.exe"</stopexecutable>
+	<stoparguments>-Xrs -Xmx512m -jar "%BASE%\demojetty12.jar" shutdown</stoparguments> -->
     <!-- ใช้ curl -->
     <!--<stopexecutable>"%BASE%\curl.exe"</stopexecutable>
 	<stoparguments>-s "http://127.0.0.1:8080/shutdown?token=secret123"</stoparguments>-->
@@ -29,5 +29,5 @@
 	<stoparguments>-Command "Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8080/shutdown?token=secret123"</stoparguments>-->
 
     <stoptimeout>60000</stoptimeout>
-    <stopparentprocessfirst>false</stopparentprocessfirst>
+    <!-- <stopparentprocessfirst>false</stopparentprocessfirst>  -->
 </service>

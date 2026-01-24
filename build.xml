@@ -52,7 +52,8 @@
 	<target name="jar" depends="compile" description="Create the executable JAR file">
 		<echo message="Creating executable JAR file with 'lib/' Class-Path in Manifest..." />
 		<echo message="manifest.classpath : ${manifest.classpath}" /> <!-- ใช้แสดงค่าตัวแปรด้านบน -->
-		<jar destfile="${build.dir}/${final.jar.name}" basedir="${classes.dir}">
+		<!--<jar destfile="${build.dir}/${final.jar.name}" basedir="${classes.dir}">-->
+		<jar destfile="${basedir}/${final.jar.name}" basedir="${classes.dir}">
 			<manifest>
 				<attribute name="Main-Class" value="${main-class}" />
 				<attribute name="Class-Path" value="${manifest.classpath}" />
@@ -60,19 +61,19 @@
 			</manifest>
 		</jar>
 
-		<echo message="Copying external libraries into 'lib' subdirectory..." />
+		<!--<echo message="Copying external libraries into 'lib' subdirectory..." />
 		<copy todir="${build.dir}/lib">
 			<fileset dir="${lib.dir}">
 				<include name="**/*.jar" />
 			</fileset>
-		</copy>
+		</copy>-->
 	</target>
 
-	<target name="run" depends="jar" description="Run the application">
+	<!--<target name="run" depends="jar" description="Run the application">
 		<echo message="Running the application using the executable JAR..." />
 		<exec executable="java" failonerror="true">
 			<arg value="-jar" />
 			<arg path="${build.dir}/${final.jar.name}" />
 		</exec>
-	</target>
+	</target>-->
 </project>

@@ -7,7 +7,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.EnumSet;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.jetty.ee10.apache.jsp.JettyJasperInitializer;
 import org.eclipse.jetty.ee10.jsp.JettyJspServlet;
@@ -20,6 +19,7 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.component.LifeCycle;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.VirtualThreadPool;
 
@@ -42,50 +42,14 @@ public class Main {
 	int https_server_port = 8443;
 	public static Main main = null;
 	public static final boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("window") >= 0;
-	private static final AtomicBoolean stopping = new AtomicBoolean(false);
-	private static final String urlShutdownPassword = "myPass123";
 
 	/**
 	 * นำไปใช้กับ apache procrun ตอน start service ได้ด้วย
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		if (args != null && args.length > 0 && args[0].trim().equals("shutdown")) {
-			stopServiceByUrl();
-		} else {
-			main = new Main();
-			main.startServer();
-		}
-	}
-
-	private static void stopServiceByUrl() {
-		try {
-			java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-
-			java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-					.uri(java.net.URI.create("http://127.0.0.1:8080/shutdown?token=" + urlShutdownPassword))
-					.GET()
-					.build();
-
-			// ส่ง Request และรับ Response
-			java.net.http.HttpResponse<String> response = client.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
-
-			// แสดงผลลัพธ์
-			if (response.statusCode() != 200) {
-				log.info("Status code: {}", response.statusCode());
-				log.info(response.body());
-			}
-		} catch (Exception e) {
-			log.error(e.getMessage(), e);
-		}
-	}
-
-	/**
-	 * นำไปใช้กับ apache procrun ตอน stop service
-	 * @param args
-	 */
-	public static void stopService(String[] args) {
-		main.stopServer(false);
+		main = new Main();
+		main.startServer();
 	}
 
 	public void startServer() {
@@ -116,43 +80,31 @@ public class Main {
 			}
 			addContext();
 
-			//กรณีกด ctr+c หรือ stop จาก docker หรือ คำสั่ง System.exit() จะทำ process ใน addShutdownHook นี้
-			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-				stopServer(true);
-			}));
+			server.setStopTimeout(60000);
+			server.setStopAtShutdown(true);
+			server.addEventListener(new LifeCycle.Listener() {
+				@Override
+				public void lifeCycleStopping(LifeCycle event) {
+					log.info("Jetty is stopping gracefully");
+				}
+				@Override
+				public void lifeCycleStopped(LifeCycle event) {
+					log.info("Jetty fully stopped");
+				}
+			});
 
-			server.setStopTimeout(60000l);// รอ 60 นาทีก่อนจะบังคับปิด
 			server.start();
 			server.join();
-
-		} catch (Exception e) {
-			log.error(e.getMessage(), e);
-		}
-	}
-
-	public void stopServer(boolean isShutdownHook) {
-		if (!stopping.compareAndSet(false, true)) {
-	        log.info("Shutdown already in progress");
-	        return;
-	    }
-		int exitCode = 0;
-		try {
-			if (server != null && server.isRunning()) {
-				log.warn("init stop");
-				server.stop();
-				server.destroy();
-				log.info("Server stopped gracefully");
+			
+			if (isWindows) {
+				System.exit(0);
 			}
+
 		} catch (Exception e) {
-			exitCode = 1;
 			log.error(e.getMessage(), e);
-		} finally {
-			if (isWindows && !isShutdownHook) {
-	            System.exit(exitCode);//คำสั่งนี้ไปเรียก addShutdownHook อีกครั้ง
-	        }
 		}
 	}
-
+	
 	public void addHttpConnector(int port) throws Exception {
 		HttpConfiguration httpConf = new HttpConfiguration();
 
@@ -277,54 +229,6 @@ public class Main {
 	
 	private void addMainApi(WebAppContext context) {
 
-		//สำหรับ shutdown ด้วย winsw/curl ด้วย
-		context.addServlet(new jakarta.servlet.http.HttpServlet() {
-
-			private static final long serialVersionUID = -1079681049977214895L;
-
-			@Override
-			protected void doGet(HttpServletRequest request, HttpServletResponse response)
-					throws ServletException, IOException {
-
-				log.info("Requested Shutdown");
-
-				//จำกัดให้เรียกได้เฉพาะ localhost
-				String remoteAddr = request.getRemoteAddr();
-				if (!"127.0.0.1".equals(remoteAddr) && !"0:0:0:0:0:0:0:1".equals(remoteAddr)) {
-					response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-					response.getWriter().println("Access denied");
-					log.warn("Rejected shutdown from: {}", remoteAddr);
-					return;
-				}
-
-				//ตรวจ token
-				String tokenParam = request.getParameter("token");
-				if (!urlShutdownPassword.equals(tokenParam)) {
-					response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-					response.getWriter().println("Invalid token");
-					log.warn("Invalid token");
-					return;
-				}
-
-				//เริ่มหยุด Jetty
-				response.setStatus(HttpServletResponse.SC_OK);
-				response.getWriter().println("Shutting down Jetty...");
-
-				log.warn(">>> Shutdown requested via /shutdown from {}", remoteAddr);
-
-				new Thread(() -> {
-					try {
-						Thread.sleep(500); // รอให้ response ส่งกลับ
-						stopServer(false);
-					} catch (Exception e) {
-						log.error(e.getMessage(), e);
-					}
-				}).start();
-
-			}
-
-		}, "/shutdown");// test link = http://localhost:8080/shutdown
-
 		context.addServlet(new jakarta.servlet.http.HttpServlet() {
 
 			private static final long serialVersionUID = -1079681049977214895L;
@@ -352,7 +256,7 @@ public class Main {
 			private static final long serialVersionUID = -1079681049977214895L;
 
 			@Override
-			protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			protected void doGet(HttpServletRequest request, HttpServletResponse response)
 					throws ServletException, IOException {
 
 				log.info("Request handled by thread: {}", Thread.currentThread().getName());
