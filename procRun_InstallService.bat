@@ -9,6 +9,7 @@ set EXE_PATH=%WK_PATH%\demojetty12.exe
 set JAR_FILE=demojetty12.jar
 
 echo Installing %SERVICE_NAME% ...
+
 "%EXE_PATH%" //IS//%SERVICE_NAME% ^
   --DisplayName="Demo Jetty 12" ^
   --Description="Jetty embedded running via Apache Procrun" ^
@@ -17,10 +18,7 @@ echo Installing %SERVICE_NAME% ...
   --StartPath="%WK_PATH%" ^
   --StartImage="%JAVA_HOME%\bin\java.exe" ^
   --StartParams=-Xmx512m;-jar;%JAR_FILE% ^
-  --StopMode=exe ^
-  --StopPath="%WK_PATH%" ^
-  --StopImage="%JAVA_HOME%\bin\java.exe" ^
-  --StopParams=-Xmx256m;-jar;%JAR_FILE%;shutdown ^
+  --StopMode=jvm ^
   --LogPath="%WK_PATH%\logs" ^
   --LogPrefix=service ^
   --LogLevel=Info
