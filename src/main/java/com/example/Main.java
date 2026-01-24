@@ -43,10 +43,6 @@ public class Main {
 	public static Main main = null;
 	public static final boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("window") >= 0;
 
-	/**
-	 * นำไปใช้กับ apache procrun ตอน start service ได้ด้วย
-	 * @param args
-	 */
 	public static void main(String[] args) {
 		main = new Main();
 		main.startServer();
