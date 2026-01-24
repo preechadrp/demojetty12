@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 set APP_PATH=%~dp0
-cd "%APP_PATH%"
+cd /d "%APP_PATH%"
 set WK_PATH=%cd%
 set SERVICE_NAME=demojetty12
 set EXE_PATH=%WK_PATH%\demojetty12.exe

@@ -1,3 +1,5 @@
 :: rename Winsw.exe to demojetty12sw.exe
-%~dp0demojetty12sw.exe uninstall
+set APP_PATH=%~dp0
+cd /d "%APP_PATH%"
+demojetty12sw.exe uninstall
 pause
