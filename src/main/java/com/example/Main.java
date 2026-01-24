@@ -58,7 +58,7 @@ public class Main {
 	 */
 	public static void startApp(String[] args) {
 		main = new Main();
-		main.startServer();	
+		main.startServer();
 	}
 	
 	/**
@@ -115,9 +115,9 @@ public class Main {
 			server.start();
 			server.join();
 			
-			if (isWindows) {
-				System.exit(0);
-			}
+			//if (isWindows) {
+			//	System.exit(0);
+			//}
 
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
@@ -135,8 +135,6 @@ public class Main {
 	        }
 	    } catch (Exception e) {
 	        log.error(e.getMessage(), e);
-	    } finally {
-	        System.exit(0);
 	    }
 	}
 	

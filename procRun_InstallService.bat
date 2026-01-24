@@ -8,6 +8,11 @@ set EXE_PATH=%WK_PATH%\demojetty12.exe
 set JAR_FILE=demojetty12.jar;./lib/*
 set START_CLASS=com.example.Main
 
+REM === ensure log directory exists ===
+if not exist "%WK_PATH%\logs" (
+    mkdir "%WK_PATH%\logs"
+)
+
 echo Installing %SERVICE_NAME% ...
 
 "%EXE_PATH%" //IS//%SERVICE_NAME% ^

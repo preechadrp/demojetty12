@@ -15,7 +15,7 @@
     <!-- กรณีต้องการปิด log (จะมีผลเฉพาะ stdout,stderror เท่านั้น) -->
     <!-- <log mode="none"/> -->
 
-    <executable>"%BASE%\jre21\bin\java.exe"</executable>
+    <executable>"%BASE%\jre\bin\java.exe"</executable>
     <startarguments>-Xrs -Xmx512m -jar "%BASE%\demojetty12.jar"</startarguments>
        
     <!-- เรียก shutdown แบบ url -->
