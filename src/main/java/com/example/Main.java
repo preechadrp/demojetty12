@@ -40,7 +40,6 @@ public class Main {
 	public Server server = null;
 	int http_server_port = 8080;
 	int https_server_port = 8443;
-	public static final boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("window") >= 0;
 	public static Main main = null;
 
 	/**
@@ -49,7 +48,7 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		main = new Main();
-		main.startServer();	
+		main.startServer(true);	
 	}
 	
 	/**
@@ -58,7 +57,7 @@ public class Main {
 	 */
 	public static void startApp(String[] args) {
 		main = new Main();
-		main.startServer();
+		main.startServer(false);
 	}
 	
 	/**
@@ -71,7 +70,7 @@ public class Main {
 	    }
 	}
 	
-	public void startServer() {
+	public void startServer(boolean block) {
 		try {
 
 			// == ตัวอย่าง
@@ -113,11 +112,9 @@ public class Main {
 			});
 
 			server.start();
-			server.join();
-			
-			//if (isWindows) {
-			//	System.exit(0);
-			//}
+			if (block) {
+				server.join();
+			}
 
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
