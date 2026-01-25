@@ -93,7 +93,7 @@ public class Main {
 			if (enableJettyHttps == false) {
 				addHttpConnector(http_server_port);
 			} else {
-				addHttpsConnector(https_server_port, true);
+				addHttpsConnector(https_server_port, true, 0);
 			}
 			addContext();
 
@@ -146,7 +146,7 @@ public class Main {
 		server.addConnector(httpConnector);
 	}
 	
-	public void addHttpsConnector(int port, boolean useTrustStore) throws Exception {
+	public void addHttpsConnector(int port, boolean useTrustStore, int clientAuthOption) throws Exception {
 
 		// Setup HTTPS Configuration
 		HttpConfiguration httpsConf = new HttpConfiguration();
@@ -188,8 +188,11 @@ public class Main {
 			sslContextFactory.setTrustStorePassword("password"); // รหัสผ่าน TrustStore
 
 			// ถ้าต้องการให้เซิร์ฟเวอร์ร้องขอ Client Certificate (Mutual TLS)
-			// sslContextFactory.setNeedClientAuth(true); // บังคับให้ไคลเอนต์ส่งใบรับรอง
-			// sslContextFactory.setWantClientAuth(true); // ร้องขอแต่ไม่บังคับ
+			if (clientAuthOption == 1) {
+				sslContextFactory.setNeedClientAuth(true); // บังคับให้ไคลเอนต์ส่งใบรับรอง
+			} else if (clientAuthOption == 2) {
+				sslContextFactory.setWantClientAuth(true); // ร้องขอแต่ไม่บังคับ
+			}
 
 		}
 
