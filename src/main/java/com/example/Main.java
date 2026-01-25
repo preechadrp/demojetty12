@@ -176,7 +176,8 @@ public class Main {
 
 		// กำหนด Protocol ที่อนุญาต (Allowed Protocols) ***
 		// ควรใช้ TLSv1.2 และ TLSv1.3 เท่านั้น หลีกเลี่ยง SSLv3, TLSv1, TLSv1.1
-		sslContextFactory.setIncludeProtocols("TLSv1.2", "TLSv1.3");
+		String[] includeProtocols = new String[] { "TLSv1.2", "TLSv1.3" };
+		sslContextFactory.setIncludeProtocols(includeProtocols);
 
 		if (useTrustStore) {
 
