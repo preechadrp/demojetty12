@@ -47,8 +47,7 @@ public class Main {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		main = new Main();
-		main.startServer(true);	
+		new Main().startServer(true);
 	}
 	
 	/**
