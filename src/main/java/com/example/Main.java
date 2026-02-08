@@ -138,7 +138,9 @@ public class Main {
 		HttpConfiguration httpConf = new HttpConfiguration();
 
 		httpConf.addCustomizer(new ForwardedRequestCustomizer()); //Jetty อยู่ หลัง nginx / proxy , อ่าน header จาก proxy: แล้ว “หลอก” Jetty ว่า request เดิมเป็น HTTPS
-
+		httpConf.setSendServerVersion(false); //ไม่แสดง server version
+		httpConf.setSendXPoweredBy(false); //ไม่แสดง server name
+		
 		ServerConnector httpConnector = new ServerConnector(
 				server,
 				new HttpConnectionFactory(httpConf));
@@ -154,6 +156,8 @@ public class Main {
 		httpsConf.setSecureScheme("https");
 		
 		httpsConf.addCustomizer(new SecureRequestCustomizer()); // Jetty ทำ HTTPS เอง
+		httpsConf.setSendServerVersion(false); //ไม่แสดง server version
+		httpsConf.setSendXPoweredBy(false); //ไม่แสดง server name
 
 		// Setup SSL
 		SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
